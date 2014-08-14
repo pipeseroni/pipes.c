@@ -15,7 +15,7 @@ void interrupt_signal(int param);
 void parse_options(int argc, char **argv);
 float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
-void die(const char *why);
+void die();
 void usage_msg(int exitval);
 
 //The states describe the current "velocity" of a pipe.  Notice that the allowed
@@ -195,30 +195,27 @@ void usage_msg(int exitval){
 	fprintf(exitval == 0 ? stdout : stderr, "%s",   usage);
 }
 
-void die(const char *why){
-	fprintf(stderr, "Error: %s\n", why);
+void die(){
 	usage_msg(1);
 	exit(1);
 }
 
 int parse_int_opt(const char *optname){
 	errno = 0;
-	char errbuf[80];
 	int i_res = strtol(optarg, NULL, 10);
 	if(errno || i_res < 1){
-		snprintf(errbuf, 80, "%s must be a positive integer.", optname);
-		die(errbuf);
+		fprintf(stderr, "%s must be a positive integer.\n", optname);
+		die();
 	}
 	return i_res;
 }
 
 float parse_float_opt(const char *optname){
 	errno = 0;
-	char errbuf[80];
 	float f_res = strtof(optarg, NULL);
 	if(errno || f_res < 0){
-		snprintf(errbuf, 80, "%s must be a real number (>= 0).", optname);
-		die(errbuf);
+		fprintf(stderr, "%s must be a real number (>= 0).\n", optname);
+		die();
 	}
 	return f_res;
 }
