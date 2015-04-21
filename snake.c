@@ -9,6 +9,8 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include "pipe.h"
+
 #define NS 1000000000L //1ns
 
 void interrupt_signal(int param);
@@ -17,46 +19,6 @@ float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 void die();
 void usage_msg(int exitval);
-
-//The states describe the current "velocity" of a pipe.  Notice that the allowed
-//transitions are given by a change of +/- 1. So, for example, a pipe heading
-//left may go up or down but not right.
-//              Right    Down   Left    Up
-const char states[][2] = {{1,0}, {0,1}, {-1,0}, {0,-1}};
-
-//The transition matrices here describe the character that should be output upon
-//a transition from] one state (direction) to another. If you wanted, you could
-//modify these to include the probability of a transition.
-//┓ : U+2513
-//┛ : U+251B
-//┗ : U+2517
-//┏ : U+250F
-const char* trans_unicode[][4]  = {
-//      R D L U
-    {"",         "\u2513",     "",          "\u251B"  }, //R
-    {"\u2517",    "",          "\u251B",     0       }, //D
-    {"",         "\u250F",     "",          "\u2517"  }, //L
-    {"\u250F",    "",          "\u2513",     0       }  //D
-};
-const char* trans_ascii[][4] = {
-//       R D L U
-    {"",     "+",    "",      "+"}, //R
-    {"+",   "",      "+",    0  }, //D
-    {"",     "+",    "",      "+"}, //L
-    {"+",   "",      "+",    0  }  //U
-};
-
-//The characters to represent a travelling (or extending, I suppose) pipe.
-const char* unicode_pipe_chars[] = {"\u2501", "\u2503"};
-const char* ascii_pipe_chars[]   = {"-", "|"};
-
-//Represents a pipe
-struct pipe {
-    unsigned char state;
-    unsigned short colour;
-    unsigned short length;
-    int x, y;
-};
 
 //If set >= zero, this initial state is used.
 int initial_state = -1;
@@ -121,16 +83,8 @@ int main(int argc, char **argv){
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
-    for(unsigned int i=0; i<num_pipes;i++){
-        if(initial_state < 0)
-            pipes[i].state = (rand() / (RAND_MAX / 4 + 1));
-        else
-            pipes[i].state = initial_state;
-        pipes[i].colour = (rand() / (RAND_MAX / COLORS + 1));
-        pipes[i].length = 0;
-        pipes[i].x = (rand() / (RAND_MAX / width + 1));
-        pipes[i].y = (rand() / (RAND_MAX / height + 1));
-    }
+    for(unsigned int i=0; i<num_pipes;i++)
+        init_pipe(&pipes[i], COLORS, initial_state, width, height);
 
     struct timespec start_time;
     long delay_ns = NS / fps;
@@ -138,32 +92,20 @@ int main(int argc, char **argv){
     while(!interrupted){
         clock_gettime(CLOCK_REALTIME, &start_time);
         for(int i=0; i<num_pipes && !interrupted; i++){
-            pipes[i].x += states[pipes[i].state][0];
-            pipes[i].y += states[pipes[i].state][1];
-            pipes[i].length++;
-
-            if(pipes[i].x < 0 || pipes[i].x == width
-                    || pipes[i].y < 0 || pipes[i].y == height){
-                if(pipes[i].x < 0){ pipes[i].x += width; }
-                if(pipes[i].y < 0){ pipes[i].y += height; }
-                if(pipes[i].x >= width) {pipes[i].x -= width; }
-                if(pipes[i].y >= height) {pipes[i].y -= height; }
-                pipes[i].colour = (rand() / (RAND_MAX / COLORS + 1));
-            }
+            move_pipe(&pipes[i]);
+            if(wrap_pipe(&pipes[i], width, height))
+                random_pipe_colour(&pipes[i], COLORS);
 
             move(pipes[i].y, pipes[i].x);
             attron(COLOR_PAIR(pipes[i].colour));
             if( rand() < prob*RAND_MAX && pipes[i].length > min_len){
-                char new_state = pipes[i].state;
-                char flip = ((rand() < RAND_MAX/2) ? -1 : 1 );
-                new_state += flip;
-                if(new_state < 0) { new_state = 3; }
-                else if(new_state > 3){ new_state = 0; }
+                char old_state = pipes[i].state;
+                flip_pipe_state(&pipes[i]);
 
-                addstr((*trans)[pipes[i].state][(int)new_state]);
-                pipes[i].length = 0;
-                pipes[i].state = new_state;
+                //Write transition character
+                addstr((*trans)[(int)old_state][pipes[i].state]);
             }else{
+                //Write continuation character
                 addstr((*pipe_chars)[pipes[i].state % 2]);
             }
             attroff(COLOR_PAIR(pipes[i].colour));
