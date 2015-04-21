@@ -65,7 +65,7 @@ const char *usage =
     "Usage: snake [OPTIONS]\n"
     "Options:\n"
     "    -p, --pipes=N   Number of pipes.                  (Default: 20    )\n"
-    "    -f, --fps=F     Frames per second.                (Default: 75.0  )\n"
+    "    -f, --fps=F     Frames per second.                (Default: 60.0  )\n"
     "    -a, --ascii     ASCII mode.                       (Default: no    )\n"
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
     "    -r, --prob=N    Probability of chaning direction. (Default: 0.1   )\n"
@@ -93,7 +93,7 @@ volatile sig_atomic_t interrupted = 0;
 unsigned int width, height;
 
 unsigned int num_pipes = 20;
-float fps = 75;
+float fps = 60;
 float prob = 0.1;
 unsigned int min_len = 2;
 const char* (*trans)[][4] = &trans_unicode;
