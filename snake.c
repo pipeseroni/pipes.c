@@ -123,13 +123,13 @@ int main(int argc, char **argv){
     pipes = malloc(num_pipes * sizeof(struct pipe));
     for(unsigned int i=0; i<num_pipes;i++){
         if(initial_state < 0)
-            pipes[i].state = (rand() % 4);
+            pipes[i].state = (rand() / (RAND_MAX / 4 + 1));
         else
             pipes[i].state = initial_state;
-        pipes[i].colour = (rand() % COLORS);
+        pipes[i].colour = (rand() / (RAND_MAX / COLORS + 1));
         pipes[i].length = 0;
-        pipes[i].x = (rand() % width);
-        pipes[i].y = (rand() % height);
+        pipes[i].x = (rand() / (RAND_MAX / width + 1));
+        pipes[i].y = (rand() / (RAND_MAX / height + 1));
     }
 
     struct timespec start_time;
@@ -148,7 +148,7 @@ int main(int argc, char **argv){
                 if(pipes[i].y < 0){ pipes[i].y += height; }
                 if(pipes[i].x >= width) {pipes[i].x -= width; }
                 if(pipes[i].y >= height) {pipes[i].y -= height; }
-                pipes[i].colour = (rand() % COLORS);
+                pipes[i].colour = (rand() / (RAND_MAX / COLORS + 1));
             }
 
             move(pipes[i].y, pipes[i].x);
