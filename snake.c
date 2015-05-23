@@ -58,8 +58,9 @@ unsigned int num_pipes = 20;
 float fps = 60;
 float prob = 0.1;
 unsigned int min_len = 2;
-const char* (*trans)[][4] = &trans_unicode;
-const char* (*pipe_chars)[] = &unicode_pipe_chars;
+
+const char **trans = trans_unicode;
+const char **pipe_chars = unicode_pipe_chars;
 
 
 int main(int argc, char **argv){
@@ -99,12 +100,11 @@ void render(void *data){
         attron(COLOR_PAIR(pipes[i].colour));
         if(should_flip_state(&pipes[i], min_len, prob)){
             char old_state = flip_pipe_state(&pipes[i]);
-
             //Write transition character
-            addstr((*trans)[(int)old_state][pipes[i].state]);
+            addstr(transition_char(trans, old_state, pipes[i].state));
         }else{
             //Write continuation character
-            addstr((*pipe_chars)[pipes[i].state % 2]);
+            addstr(pipe_chars[pipes[i].state % 2]);
         }
         attroff(COLOR_PAIR(pipes[i].colour));
     }
@@ -156,8 +156,8 @@ void parse_options(int argc, char **argv){
                 fps = parse_float_opt("--fps");
                 break;
             case 'a':
-                trans = &trans_ascii;
-                pipe_chars = &ascii_pipe_chars;
+                trans = trans_ascii;
+                pipe_chars = ascii_pipe_chars;
                 break;
             case 'l':
                 min_len = parse_int_opt("--length");

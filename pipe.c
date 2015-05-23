@@ -16,20 +16,24 @@ const char states[][2] = {{1,0}, {0,1}, {-1,0}, {0,-1}};
 //┛ : U+251B
 //┗ : U+2517
 //┏ : U+250F
-const char* trans_unicode[][4]  = {
+const char* trans_unicode[]  = {
 //      R D L U
-    {"",         "\u2513",     "",          "\u251B"  }, //R
-    {"\u2517",    "",          "\u251B",     0       }, //D
-    {"",         "\u250F",     "",          "\u2517"  }, //L
-    {"\u250F",    "",          "\u2513",     0       }  //D
+    "",         "\u2513",     "",          "\u251B", //R
+    "\u2517",    "",          "\u251B",     0      , //D
+    "",         "\u250F",     "",          "\u2517", //L
+    "\u250F",    "",          "\u2513",     0        //D
 };
-const char* trans_ascii[][4] = {
+const char* trans_ascii[] = {
 //       R D L U
-    {"",     "+",    "",      "+"}, //R
-    {"+",   "",      "+",    0  }, //D
-    {"",     "+",    "",      "+"}, //L
-    {"+",   "",      "+",    0  }  //U
+    "",     "+",    "",      "+", //R
+    "+",   "",      "+",    0   , //D
+    "",     "+",    "",      "+", //L
+    "+",   "",      "+",    0     //U
 };
+
+const char * transition_char(const char **list, int row, int col){
+    return list[row * 4 + col];
+}
 
 //The characters to represent a travelling (or extending, I suppose) pipe.
 const char* unicode_pipe_chars[] = {"\u2501", "\u2503"};
@@ -85,3 +89,4 @@ char flip_pipe_state(struct pipe *pipe){
 bool should_flip_state(struct pipe *p, int min_len, float prob){
     return rand() < prob*RAND_MAX && p->length > min_len;
 }
+
