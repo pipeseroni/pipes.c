@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "pipe.h"
+#include "util.h"
 
 //The states describe the current "velocity" of a pipe.  Notice that the allowed
 //transitions are given by a change of +/- 1. So, for example, a pipe heading
@@ -38,13 +39,13 @@ void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
         int width, int height){
 
     if(initial_state < 0)
-        pipe->state = (rand() / (RAND_MAX / 4 + 1));
+        pipe->state = random_i(0, 4);
     else
         pipe->state = initial_state;
-    pipe->colour = (rand() / (RAND_MAX / ncolours + 1));
+    pipe->colour = random_i(0, ncolours);
     pipe->length = 0;
-    pipe->x = (rand() / (RAND_MAX / width + 1));
-    pipe->y = (rand() / (RAND_MAX / height + 1));
+    pipe->x = random_i(0, width);
+    pipe->y = random_i(0, height);
 }
 
 void move_pipe(struct pipe *pipe){
@@ -66,7 +67,7 @@ bool wrap_pipe(struct pipe *pipe, int width, int height){
 }
 
 void random_pipe_colour(struct pipe *pipe, int ncolours){
-    pipe->colour = (rand() / (RAND_MAX / ncolours + 1));
+    pipe->colour = random_i(0, ncolours);
 }
 
 void flip_pipe_state(struct pipe *pipe){

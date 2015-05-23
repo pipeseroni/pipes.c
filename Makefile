@@ -6,7 +6,7 @@ LIBS += $(if $(shell pkg-config --exists ncursesw && echo y),\
 		$(shell pkg-config --libs ncurses),-lcurses))
 CFLAGS = -Wall -std=c99
 
-SRCS = snake.c pipe.c
+SRCS = snake.c pipe.c util.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET)
