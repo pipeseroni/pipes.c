@@ -70,7 +70,8 @@ void random_pipe_colour(struct pipe *pipe, int ncolours){
     pipe->colour = random_i(0, ncolours);
 }
 
-void flip_pipe_state(struct pipe *pipe){
+char flip_pipe_state(struct pipe *pipe){
+    char old_state = pipe->state;
     char new_state = pipe->state;
     char flip = ((rand() < RAND_MAX/2) ? -1 : 1 );
     new_state += flip;
@@ -78,4 +79,9 @@ void flip_pipe_state(struct pipe *pipe){
     else if(new_state > 3){ new_state = 0; }
     pipe->state = new_state;
     pipe->length = 0;
+    return old_state;
+}
+
+bool should_flip_state(struct pipe *p, int min_len, float prob){
+    return rand() < prob*RAND_MAX && p->length > min_len;
 }

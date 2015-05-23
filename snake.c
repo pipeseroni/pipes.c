@@ -97,9 +97,8 @@ void render(void *data){
 
         move(pipes[i].y, pipes[i].x);
         attron(COLOR_PAIR(pipes[i].colour));
-        if( rand() < prob*RAND_MAX && pipes[i].length > min_len){
-            char old_state = pipes[i].state;
-            flip_pipe_state(&pipes[i]);
+        if(should_flip_state(&pipes[i], min_len, prob)){
+            char old_state = flip_pipe_state(&pipes[i]);
 
             //Write transition character
             addstr((*trans)[(int)old_state][pipes[i].state]);

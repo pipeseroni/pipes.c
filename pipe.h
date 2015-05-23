@@ -22,7 +22,8 @@ void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
         int width, int height);
 void move_pipe(struct pipe *pipe);
 bool wrap_pipe(struct pipe *pipe, int width, int height);
-void flip_pipe_state(struct pipe *pipe);
+char flip_pipe_state(struct pipe *pipe);
 void random_pipe_colour(struct pipe *pipe, int ncolours);
+bool should_flip_state(struct pipe *p, int min_len, float prob);
 
 #endif //PIPE_H_
