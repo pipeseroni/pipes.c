@@ -96,17 +96,11 @@ void render(void *data){
             random_pipe_colour(&pipes[i], COLORS);
 
 
-        move(pipes[i].y, pipes[i].x);
-        attron(COLOR_PAIR(pipes[i].colour));
+        char old_state = pipes[i].state;
         if(should_flip_state(&pipes[i], min_len, prob)){
-            char old_state = flip_pipe_state(&pipes[i]);
-            //Write transition character
-            addstr(transition_char(trans, old_state, pipes[i].state));
-        }else{
-            //Write continuation character
-            addstr(pipe_chars[pipes[i].state % 2]);
+            old_state = flip_pipe_state(&pipes[i]);
         }
-        attroff(COLOR_PAIR(pipes[i].colour));
+        render_pipe(&pipes[i], trans, pipe_chars, old_state, pipes[i].state);
     }
     refresh();
 }
