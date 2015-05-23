@@ -10,8 +10,7 @@
 #include <errno.h>
 
 #include "pipe.h"
-
-#define NS 1000000000L //1ns
+#include "render.h"
 
 void interrupt_signal(int param);
 void parse_options(int argc, char **argv);
@@ -19,6 +18,7 @@ float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 void die();
 void usage_msg(int exitval);
+void render(void *data);
 
 //If set >= zero, this initial state is used.
 int initial_state = -1;
@@ -73,60 +73,43 @@ int main(int argc, char **argv){
     initscr();
     curs_set(0);
     getmaxyx(stdscr, height, width);
-    //Initialise colour pairs if we can.
-    if(has_colors()){
-        start_color();
-        for(short i=1; i < COLORS; i++){
-            init_pair(i, i, COLOR_BLACK);
-        }
-    }
+    init_colours();
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
     for(unsigned int i=0; i<num_pipes;i++)
         init_pipe(&pipes[i], COLORS, initial_state, width, height);
 
-    struct timespec start_time;
-    long delay_ns = NS / fps;
-
-    while(!interrupted){
-        clock_gettime(CLOCK_REALTIME, &start_time);
-        for(int i=0; i<num_pipes && !interrupted; i++){
-            move_pipe(&pipes[i]);
-            if(wrap_pipe(&pipes[i], width, height))
-                random_pipe_colour(&pipes[i], COLORS);
-
-            move(pipes[i].y, pipes[i].x);
-            attron(COLOR_PAIR(pipes[i].colour));
-            if( rand() < prob*RAND_MAX && pipes[i].length > min_len){
-                char old_state = pipes[i].state;
-                flip_pipe_state(&pipes[i]);
-
-                //Write transition character
-                addstr((*trans)[(int)old_state][pipes[i].state]);
-            }else{
-                //Write continuation character
-                addstr((*pipe_chars)[pipes[i].state % 2]);
-            }
-            attroff(COLOR_PAIR(pipes[i].colour));
-        }
-        refresh();
-        struct timespec end_time;
-        clock_gettime(CLOCK_REALTIME, &end_time);
-        long took_ns =
-              NS * (end_time.tv_sec - start_time.tv_sec)
-                 + (end_time.tv_nsec - start_time.tv_nsec);
-        struct timespec sleep_time = {
-            .tv_sec  = (delay_ns - took_ns) / NS,
-            .tv_nsec = (delay_ns - took_ns) % NS
-        };
-        nanosleep(&sleep_time, NULL);
-    }
+    animate(fps, render, &interrupted, NULL);
 
     curs_set(1);
     endwin();
     free(pipes);
     return 0;
+}
+
+void render(void *data){
+    for(int i=0; i<num_pipes && !interrupted; i++){
+        move_pipe(&pipes[i]);
+        if(wrap_pipe(&pipes[i], width, height))
+            random_pipe_colour(&pipes[i], COLORS);
+
+
+        move(pipes[i].y, pipes[i].x);
+        attron(COLOR_PAIR(pipes[i].colour));
+        if( rand() < prob*RAND_MAX && pipes[i].length > min_len){
+            char old_state = pipes[i].state;
+            flip_pipe_state(&pipes[i]);
+
+            //Write transition character
+            addstr((*trans)[(int)old_state][pipes[i].state]);
+        }else{
+            //Write continuation character
+            addstr((*pipe_chars)[pipes[i].state % 2]);
+        }
+        attroff(COLOR_PAIR(pipes[i].colour));
+    }
+    refresh();
 }
 
 void interrupt_signal(int param){
