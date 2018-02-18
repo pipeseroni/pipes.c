@@ -1,4 +1,4 @@
-# Snakes
+# Pipes.c
 
 > *A small piece of software designed to emulate the windows "pipes"
 screensaver in a terminal window.*
@@ -32,11 +32,11 @@ Note that at least version 2.64 of autoconf is required.
 
 ## Usage
 
-To get help, run `snake --help`. In my opinion, the following options are
+To get help, run `pipes-c --help`. In my opinion, the following options are
 especially interesting:
 
-    snake -p30 -r1
-    snake -p100 -r0 -i1
+    pipes-c -p30 -r1
+    pipes-c -p100 -r0 -i1
 
 ## Bugs
 

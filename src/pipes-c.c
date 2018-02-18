@@ -33,7 +33,7 @@ void render(void *data);
 int initial_state = -1;
 
 const char *usage =
-    "Usage: snake [OPTIONS]\n"
+    "Usage: pipes-c [OPTIONS]\n"
     "Options:\n"
     "    -p, --pipes=N   Number of pipes.                  (Default: 20    )\n"
     "    -f, --fps=F     Frames per second.                (Default: 60.0  )\n"
