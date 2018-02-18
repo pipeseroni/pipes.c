@@ -30,7 +30,7 @@ const char *usage =
     "    -f, --fps=F     Frames per second.                (Default: 60.0  )\n"
     "    -a, --ascii     ASCII mode.                       (Default: no    )\n"
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
-    "    -r, --prob=N    Probability of chaning direction. (Default: 0.1   )\n"
+    "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
     "    -h, --help      This help message.\n";
 
