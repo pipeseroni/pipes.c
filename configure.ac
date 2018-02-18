@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.63])
+AC_PREREQ([2.64])
 
 # Package version from `git describe --always`
 AC_INIT([snake],
@@ -12,6 +12,9 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_PROG_SED
 AC_LANG([C])
 AC_PROG_CC_C99
+
+dnl Obsolete macro, but required by old versions of automake
+AM_PROG_CC_C_O
 
 # Non-release versions have a dash (e.g. 0.0.1-1-g1abcde)
 AX_IS_RELEASE([dash-version])
