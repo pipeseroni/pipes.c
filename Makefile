@@ -9,6 +9,15 @@ CFLAGS = -Wall -std=c99
 SRCS = snake.c pipe.c util.c render.c
 OBJS = $(SRCS:.c=.o)
 
+INSTALL = install
+INSTALL_BIN = $(INSTALL) -D -m 755
+
+PREFIX=/usr/local
+DESTDIR=
+
+INSTDIR=$(DESTDIR)$(PREFIX)
+INSTBIN=$(INSTDIR)/bin
+
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -20,4 +29,10 @@ $(TARGET): $(OBJS)
 clean:
 	-rm -f $(TARGET) $(OBJS)
 
-.PHONY: all clean
+install:
+	$(INSTALL_BIN) $(TARGET) $(INSTBIN)
+
+uninstall:
+	$(RM) $(INSTBIN)/$(TARGET)
+
+.PHONY: all clean install uninstall

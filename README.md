@@ -10,6 +10,17 @@ system (that is, most systems). To compile, simply run:
 
     make
 
+## Installation
+
+You can install Snakes by running the following command:
+
+    make install  # install to /usr/local
+    # make uninstall
+
+Use `PREFIX=/path/to` for different location, for example:
+
+    make install PREFIX=$HOME/.local
+
 ## Usage
 
 To get help, run `snake --help`. In my opinion, the following options are
