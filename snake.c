@@ -64,6 +64,7 @@ const char **pipe_chars = unicode_pipe_chars;
 
 
 int main(int argc, char **argv){
+    srand(time(NULL));
     setlocale(LC_ALL, "");
     //Set a flag upon interrupt to allow proper cleaning
     signal(SIGINT, interrupt_signal);
