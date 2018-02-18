@@ -27,5 +27,8 @@ WARN_CFLAGS=$(AS_ECHO(["$WARN_CFLAGS"]) | dnl
               $SED 's/-W\(error=\)\?declaration-after-statement *//g')
 AC_SUBST([WARN_CFLAGS])
 
+# Use noreturn attribute if available
+AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
