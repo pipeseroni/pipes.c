@@ -6,12 +6,18 @@ LIBS += $(if $(shell pkg-config --exists ncursesw && echo y),\
 		$(shell pkg-config --libs ncurses),-lcurses))
 CFLAGS = -Wall -std=c99
 
+SRCS = snake.c pipe.c util.c render.c
+OBJS = $(SRCS:.c=.o)
+
 all: $(TARGET)
 
-$(TARGET): snake.c
-	$(CC) -o$@ $(CFLAGS) $< $(LIBS)
+$(TARGET): $(OBJS)
+	$(CC) -o$@ $(CFLAGS) $^ $(LIBS)
+
+.c.o:
+	$(CC) $(CFLAGS) -o$@ -c $<
 
 clean:
-	-rm -f $(TARGET)
+	-rm -f $(TARGET) $(OBJS)
 
 .PHONY: all clean
