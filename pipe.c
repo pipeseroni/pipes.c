@@ -43,13 +43,13 @@ void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
         int width, int height){
 
     if(initial_state < 0)
-        pipe->state = random_i(0, 4);
+        pipe->state = randrange(0, 4);
     else
         pipe->state = initial_state;
-    pipe->colour = random_i(0, ncolours);
+    pipe->colour = randrange(0, ncolours);
     pipe->length = 0;
-    pipe->x = random_i(0, width);
-    pipe->y = random_i(0, height);
+    pipe->x = randrange(0, width);
+    pipe->y = randrange(0, height);
 }
 
 void move_pipe(struct pipe *pipe){
@@ -71,13 +71,13 @@ bool wrap_pipe(struct pipe *pipe, int width, int height){
 }
 
 void random_pipe_colour(struct pipe *pipe, int ncolours){
-    pipe->colour = random_i(0, ncolours);
+    pipe->colour = randrange(0, ncolours);
 }
 
 char flip_pipe_state(struct pipe *pipe){
     char old_state = pipe->state;
     char new_state = pipe->state;
-    char flip = ((rand() < RAND_MAX/2) ? -1 : 1 );
+    char flip = randbool(0.5) ? -1 : 1;
     new_state += flip;
     if(new_state < 0) { new_state = 3; }
     else if(new_state > 3){ new_state = 0; }
@@ -87,6 +87,6 @@ char flip_pipe_state(struct pipe *pipe){
 }
 
 bool should_flip_state(struct pipe *p, int min_len, float prob){
-    return rand() < prob*RAND_MAX && p->length > min_len;
+    return p->length > min_len && randbool(prob);
 }
 

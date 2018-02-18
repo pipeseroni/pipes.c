@@ -1,7 +1,9 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-int random_i(int lo, int hi);
+int randrange(int lo, int hi);
+int randint(int lo, int hi);
+bool randbool(float p);
 int min(int a, int b);
 int max(int a, int b);
 
