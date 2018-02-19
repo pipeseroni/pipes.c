@@ -7,7 +7,7 @@
 
 #define NS 1000000000L //1ns
 
-void init_colours(){
+void init_colours(void){
     //Initialise colour pairs if we can.
     if(has_colors()){
         start_color();

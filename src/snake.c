@@ -1,4 +1,6 @@
 #define _POSIX_C_SOURCE 199309L
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -12,11 +14,18 @@
 #include "pipe.h"
 #include "render.h"
 
+// Use noreturn on die() if possible
+#ifdef HAVE_STDNORETURN_H
+#   include <stdnoreturn.h>
+#else
+#   define noreturn /* noreturn */
+#endif
+
 void interrupt_signal(int param);
 void parse_options(int argc, char **argv);
 float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
-void die();
+noreturn void die(void);
 void usage_msg(int exitval);
 void render(void *data);
 
@@ -91,7 +100,7 @@ int main(int argc, char **argv){
 }
 
 void render(void *data){
-    for(int i=0; i<num_pipes && !interrupted; i++){
+    for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i]);
         if(wrap_pipe(&pipes[i], width, height))
             random_pipe_colour(&pipes[i], COLORS);
@@ -114,7 +123,7 @@ void usage_msg(int exitval){
     fprintf(exitval == 0 ? stdout : stderr, "%s",   usage);
 }
 
-void die(){
+noreturn void die(void){
     usage_msg(1);
     exit(1);
 }
