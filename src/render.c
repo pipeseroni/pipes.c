@@ -24,7 +24,7 @@ void animate(int fps, anim_function renderer,
     long delay_ns = NS / fps;
 
 
-    while(!(*interrupted)){
+    while(!(*interrupted) && getch() == ERR){
         clock_gettime(CLOCK_REALTIME, &start_time);
 
         //Render
