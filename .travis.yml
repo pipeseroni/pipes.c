@@ -10,8 +10,12 @@ compiler:
   - clang
   - gcc
 
+before_install:
+  - AA=autoconf-archive-2017.03.21
+  - wget -O - http://ftpmirror.gnu.org/autoconf-archive/$AA.tar.xz | tar -xJ
+
 before_script:
-  - autoreconf -i
+  - autoreconf -i -I $AA/m4
 
 script:
   - ./configure && make && sudo make install
