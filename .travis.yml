@@ -1,0 +1,17 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+sudo: required
+
+compiler:
+  - clang
+  - gcc
+
+before_script:
+  - autoreconf -i
+
+script:
+  - ./configure && make && sudo make install
