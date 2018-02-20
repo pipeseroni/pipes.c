@@ -83,6 +83,8 @@ int main(int argc, char **argv){
     //Initialise ncurses, hide the cursor and get width/height.
     initscr();
     curs_set(0);
+    cbreak();
+    nodelay(stdscr, true);
     getmaxyx(stdscr, height, width);
     init_colours();
 
