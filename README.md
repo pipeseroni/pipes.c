@@ -28,7 +28,8 @@ Autoconf Archive manually and tell `autoreconf` to use the local copy:
     autoreconf -i -I autoconf-archive/m4
     ./configure && make && make install
 
-Note that at least version 2.64 of autoconf is required.
+Note that at least version 2.64 of autoconf and version 2017.03.21 of
+autoconf-archive are required.
 
 ## Usage
 
