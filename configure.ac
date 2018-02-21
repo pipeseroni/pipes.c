@@ -3,11 +3,11 @@
 AC_PREREQ([2.64])
 
 # Package version from `git describe --always`
-AC_INIT([snake],
+AC_INIT([pipes.c],
         [m4_esyscmd_s([git describe --always])],
         [stefans.mezulis@gmail.com])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([src/snake.c])
+AC_CONFIG_SRCDIR([src/cpipes.c])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_PROG_SED
 AC_LANG([C])
