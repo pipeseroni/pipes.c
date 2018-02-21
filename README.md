@@ -33,11 +33,11 @@ autoconf-archive are required.
 
 ## Usage
 
-To get help, run `pipes-c --help`. In my opinion, the following options are
+To get help, run `cpipes --help`. In my opinion, the following options are
 especially interesting:
 
-    pipes-c -p30 -r1
-    pipes-c -p100 -r0 -i1
+    cpipes -p30 -r1
+    cpipes -p100 -r0 -i1
 
 ## Bugs
 
