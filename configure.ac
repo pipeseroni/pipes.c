@@ -4,7 +4,7 @@ AC_PREREQ([2.64])
 
 # Package version from `git describe --always`
 AC_INIT([pipes.c],
-        [m4_esyscmd_s([git describe --always])],
+        m4_esyscmd_s([git describe --always | sed 's/^v//' ]),
         [stefans.mezulis@gmail.com])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/cpipes.c])
