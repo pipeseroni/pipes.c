@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pipeseroni/pipes.c.svg?branch=master)](https://travis-ci.org/pipeseroni/pipes.c)
+
 # Pipes.c
 
 > *A small piece of software designed to emulate the windows "pipes"
