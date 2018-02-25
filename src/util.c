@@ -7,6 +7,9 @@
 
 ///Get a random integer in the range [lo, hi).
 int randrange(int lo, int hi){
+    assert(lo <= hi /* Negative range not allowed. */);
+    if(lo == hi)
+        return lo;
     return randint(lo, hi - 1);
 }
 
