@@ -20,6 +20,7 @@ void init_colours(void){
 }
 
 void animate(int fps, anim_function renderer,
+        unsigned int *width, unsigned int *height,
         volatile sig_atomic_t *interrupted, void *data){
     //Store start time
     struct timespec start_time;
@@ -30,7 +31,7 @@ void animate(int fps, anim_function renderer,
         clock_gettime(CLOCK_REALTIME, &start_time);
 
         //Render
-        (*renderer)(data);
+        (*renderer)(*width, *height, data);
 
         //Get end time
         struct timespec end_time;

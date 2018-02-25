@@ -300,7 +300,7 @@ int multicolumn_adjust(char **continuation) {
  * boundaries.
  */
 void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
-        int width, int height){
+        unsigned int width, unsigned int height){
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
     width -= width % colwidth;
@@ -330,16 +330,16 @@ void move_pipe(struct pipe *pipe){
  * characters, wrap the pipe before it gets a chance to spit out incomplete
  * characters.
  */
-bool wrap_pipe(struct pipe *pipe, int width, int height){
+bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
     // Take multi-column chars into account
     width -= width % max(states[0][1], -states[2][0]);
 
-    if(pipe->x < 0 || pipe->x == width
-            || pipe->y < 0 || pipe->y == height){
+    if(pipe->x < 0 || (unsigned int) pipe->x == width
+            || pipe->y < 0 || (unsigned int) pipe->y == height){
         if(pipe->x < 0){ pipe->x += width; }
         if(pipe->y < 0){ pipe->y += height; }
-        if(pipe->x >= width) {pipe->x -= width; }
-        if(pipe->y >= height) {pipe->y -= height; }
+        if((unsigned int) pipe->x >= width) {pipe->x -= width; }
+        if((unsigned int) pipe->y >= height) {pipe->y -= height; }
         return true;
     }
     return false;

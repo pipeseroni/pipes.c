@@ -33,9 +33,9 @@ enum DIRECTIONS {
 
 
 void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
-        int width, int height);
+        unsigned int width, unsigned int height);
 void move_pipe(struct pipe *pipe);
-bool wrap_pipe(struct pipe *pipe, int width, int height);
+bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height);
 char flip_pipe_state(struct pipe *pipe);
 void random_pipe_colour(struct pipe *pipe, int ncolours);
 bool should_flip_state(struct pipe *p, int min_len, float prob);
