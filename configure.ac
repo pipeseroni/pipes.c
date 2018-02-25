@@ -36,6 +36,9 @@ WARN_CFLAGS=$(AS_ECHO(["$WARN_CFLAGS"]) | dnl
               $SED 's/-W\(error=\)\?declaration-after-statement *//g')
 AC_SUBST([WARN_CFLAGS])
 
+AC_SEARCH_LIBS([iconv], [iconv], [],
+               [AC_MSG_ERROR(["iconv is required for locale conversion"])])
+
 # Use noreturn attribute if available
 AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
 
