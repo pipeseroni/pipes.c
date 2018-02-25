@@ -19,3 +19,4 @@ before_script:
 
 script:
   - ./configure && make && sudo make install
+  - make check
