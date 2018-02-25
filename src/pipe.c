@@ -334,8 +334,8 @@ bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
     // Take multi-column chars into account
     width -= width % max(states[0][1], -states[2][0]);
 
-    if(pipe->x < 0 || (unsigned int) pipe->x == width
-            || pipe->y < 0 || (unsigned int) pipe->y == height){
+    if(pipe->x < 0 || (unsigned int) pipe->x >= width
+            || pipe->y < 0 || (unsigned int) pipe->y >= height){
         if(pipe->x < 0){ pipe->x += width; }
         if(pipe->y < 0){ pipe->y += height; }
         if((unsigned int) pipe->x >= width) {pipe->x -= width; }
