@@ -1,6 +1,9 @@
 #define _POSIX_C_SOURCE 199309L
+#define _XOPEN_SOURCE_EXTENDED 1
 #include <config.h>
 
+#include <langinfo.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -28,6 +31,7 @@ int parse_int_opt(const char *optname);
 noreturn void die(void);
 void usage_msg(int exitval);
 void render(void *data);
+int init_chars(void);
 
 //If set >= zero, this initial state is used.
 int initial_state = -1;
@@ -68,9 +72,44 @@ float fps = 60;
 float prob = 0.1;
 unsigned int min_len = 2;
 
-const char **trans = trans_unicode;
-const char **pipe_chars = unicode_pipe_chars;
+char *trans[16];
+char *pipe_chars[2];
 
+// If/when we supply user-configurable characters, this will need to be changed
+// to point to the user's terminal encoding.
+const char *source_charset = "UTF-8";
+
+const char *ASCII_CHARS = "-|++++";
+const char *UNICODE_CHARS = "━┃┓┛┗┏";
+const char *selected_chars = NULL;
+
+char pipe_char_buf[CHAR_BUF_SZ];
+
+// Convenience macro for bailing in init_chars
+#define X(a) do { \
+        if( ((a)) == -1 ) { \
+            fprintf(stderr, "Error initialising pipe characters.\n"); \
+            exit(1); \
+        } \
+    } while(0);
+
+int init_chars(void) {
+    if(!selected_chars)
+        selected_chars = UNICODE_CHARS;
+    if(strlen(selected_chars) >= CHAR_BUF_SZ)
+        return -1;
+
+    char *term_charset = nl_langinfo(CODESET);
+    char inbuf[CHAR_BUF_SZ];
+    char utf8buf[CHAR_BUF_SZ];
+    strncpy(inbuf, selected_chars, CHAR_BUF_SZ);
+
+    X(locale_to_utf8(inbuf, utf8buf, source_charset, CHAR_BUF_SZ));
+    X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset));
+    X(assign_matrices(pipe_char_buf, trans, pipe_chars));
+    X(multicolumn_adjust(pipe_chars));
+    return 0;
+}
 
 int main(int argc, char **argv){
     srand(time(NULL));
@@ -79,6 +118,7 @@ int main(int argc, char **argv){
     signal(SIGINT, interrupt_signal);
 
     parse_options(argc, argv);
+    init_chars();
 
     //Initialise ncurses, hide the cursor and get width/height.
     initscr();
@@ -106,7 +146,6 @@ void render(void *data){
         move_pipe(&pipes[i]);
         if(wrap_pipe(&pipes[i], width, height))
             random_pipe_colour(&pipes[i], COLORS);
-
 
         char old_state = pipes[i].state;
         if(should_flip_state(&pipes[i], min_len, prob)){
@@ -162,8 +201,7 @@ void parse_options(int argc, char **argv){
                 fps = parse_float_opt("--fps");
                 break;
             case 'a':
-                trans = trans_ascii;
-                pipe_chars = ascii_pipe_chars;
+                selected_chars = ASCII_CHARS;
                 break;
             case 'l':
                 min_len = parse_int_opt("--length");
