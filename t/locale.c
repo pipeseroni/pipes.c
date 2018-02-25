@@ -1,7 +1,10 @@
-#include "pipe.h"
+#include <config.h>
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include "pipe.h"
 /**
  * Check locale-encoding functions.
  */

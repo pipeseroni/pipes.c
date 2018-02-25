@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <errno.h>
 #include <iconv.h>
 #include <langinfo.h>

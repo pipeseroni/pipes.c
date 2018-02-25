@@ -1,4 +1,5 @@
-#define _POSIX_C_SOURCE 199309L
+#include <config.h>
+
 #include <time.h>
 #include <signal.h>
 #include <curses.h>

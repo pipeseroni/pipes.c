@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 199309L
-#define _XOPEN_SOURCE_EXTENDED 1
 #include <config.h>
 
 #include <langinfo.h>

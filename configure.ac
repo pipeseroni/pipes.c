@@ -16,6 +16,12 @@ AC_PROG_CC_C99
 dnl Obsolete macro, but required by old versions of automake
 AM_PROG_CC_C_O
 
+# Use POSIX 200809L functions.
+# _POSIX_C_SOURCE >= 200809L should be equivalent to _XOPEN_SOURCE >= 700,
+# but at least on RHEL7 it is not.
+AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Use POSIX 200809L features])
+AC_DEFINE([_XOPEN_SOURCE], [700], [Use POSIX 200809L features])
+
 # Non-release versions have a dash (e.g. 0.0.1-1-g1abcde)
 AX_IS_RELEASE([dash-version])
 
