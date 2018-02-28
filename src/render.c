@@ -20,17 +20,28 @@ void init_colours(void){
 }
 
 void animate(int fps, anim_function renderer,
+        unsigned int *width, unsigned int *height,
         volatile sig_atomic_t *interrupted, void *data){
     //Store start time
     struct timespec start_time;
     long delay_ns = NS / fps;
 
+    // Continue while we haven't received a SIGINT
+    while(!(*interrupted)){
+        int key = getch();
 
-    while(!(*interrupted) && getch() == ERR){
+        // If we received a SIGWINCH, update width and height
+        if(key == KEY_RESIZE) {
+            getmaxyx(stdscr, *height, *width);
+        }else if(key != ERR) {
+            // Any actual keypresses should quit the program.
+            break;
+        }
+
         clock_gettime(CLOCK_REALTIME, &start_time);
 
         //Render
-        (*renderer)(data);
+        (*renderer)(*width, *height, data);
 
         //Get end time
         struct timespec end_time;

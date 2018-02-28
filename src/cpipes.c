@@ -28,7 +28,7 @@ float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 noreturn void die(void);
 void usage_msg(int exitval);
-void render(void *data);
+void render(unsigned int width, unsigned int height, void *data);
 int init_chars(void);
 
 //If set >= zero, this initial state is used.
@@ -63,7 +63,7 @@ struct pipe *pipes;
 volatile sig_atomic_t interrupted = 0;
 
 //Width and height of terminal (in chars and lines)
-unsigned int width, height;
+unsigned int screen_width, screen_height;
 
 unsigned int num_pipes = 20;
 float fps = 60;
@@ -123,15 +123,16 @@ int main(int argc, char **argv){
     curs_set(0);
     cbreak();
     nodelay(stdscr, true);
-    getmaxyx(stdscr, height, width);
+    getmaxyx(stdscr, screen_height, screen_width);
     init_colours();
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
     for(unsigned int i=0; i<num_pipes;i++)
-        init_pipe(&pipes[i], COLORS, initial_state, width, height);
+        init_pipe(&pipes[i], COLORS, initial_state,
+            screen_width, screen_height);
 
-    animate(fps, render, &interrupted, NULL);
+    animate(fps, render, &screen_width, &screen_height, &interrupted, NULL);
 
     curs_set(1);
     endwin();
@@ -139,7 +140,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void render(void *data){
+void render(unsigned int width, unsigned int height, void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i]);
         if(wrap_pipe(&pipes[i], width, height))
