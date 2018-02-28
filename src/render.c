@@ -1,7 +1,9 @@
-#define _POSIX_C_SOURCE 199309L
+#include <config.h>
+
 #include <time.h>
 #include <signal.h>
 #include <curses.h>
+#include <stdlib.h>
 #include "render.h"
 #include "pipe.h"
 
@@ -46,14 +48,15 @@ void animate(int fps, anim_function renderer,
     }
 }
 
-void render_pipe(struct pipe *p, const char **trans, const char **pipe_chars,
+void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state){
 
     move(p->y, p->x);
     attron(COLOR_PAIR(p->colour));
-    if(old_state != new_state)
+    if(old_state != new_state) {
         addstr(transition_char(trans, old_state, new_state));
-    else
+    }else{
         addstr(pipe_chars[old_state % 2]);
+    }
     attroff(COLOR_PAIR(p->colour));
 }

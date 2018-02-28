@@ -7,7 +7,7 @@ typedef void (*anim_function)(void *data);
 void init_colours(void);
 void animate(int fps, anim_function renderer,
         volatile sig_atomic_t *interrupted, void *data);
-void render_pipe(struct pipe *p, const char **trans, const char **pipe_chars,
+void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state);
 
 #endif //RENDER_H_
