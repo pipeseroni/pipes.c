@@ -36,8 +36,12 @@ WARN_CFLAGS=$(AS_ECHO(["$WARN_CFLAGS"]) | dnl
               $SED 's/-W\(error=\)\?declaration-after-statement *//g')
 AC_SUBST([WARN_CFLAGS])
 
+# OSX requires linking against libiconv
 AC_SEARCH_LIBS([iconv], [iconv], [],
                [AC_MSG_ERROR(["iconv is required for locale conversion"])])
+# Some systems require librt for clock_gettime
+AC_SEARCH_LIBS([clock_gettime], [rt], [],
+               [AC_MSG_ERROR(["clock_gettime is required for timing"])])
 
 # Use noreturn attribute if available
 AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
