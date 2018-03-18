@@ -28,6 +28,32 @@ AX_IS_RELEASE([dash-version])
 # Require curses
 AX_WITH_CURSES
 
+
+libs=$LIBS
+LIBS=$CURSES_LIBS
+
+# Macro for checking for a particular function in all libraies in LIBS
+# have_function([preamble], [function(1, 2, 3)], [symbol to define])
+AC_DEFUN([have_fn], [dnl
+    AC_MSG_CHECKING([for $2])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([$1],
+                                    [$2;])],
+                   [AC_DEFINE([$3],
+                              [1],
+                              [have $2])
+                    AC_MSG_RESULT([yes])],
+                   [AC_MSG_RESULT([no])])
+])
+have_fn([#include <curses.h>],
+        [init_extended_color(0, 0, 0, 0)],
+        [HAVE_EXTENDED_COLOR])
+
+have_fn([#include <curses.h>],
+        [alloc_pair(0, 0)],
+        [HAVE_ALLOC_PAIR])
+
+LIBS=$libs
+
 # Enable as many compiler warnings as possible
 AX_COMPILER_FLAGS()
 
