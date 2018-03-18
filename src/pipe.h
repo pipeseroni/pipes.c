@@ -19,7 +19,7 @@ extern char states[][2];
 //Represents a pipe
 struct pipe {
     unsigned char state;
-    unsigned short colour;
+    unsigned int colour;
     unsigned short length;
     int x, y;
 };
@@ -30,14 +30,15 @@ enum DIRECTIONS {
     LEFT = 2,
     UP = 3
 };
+struct palette;
 
-
-void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
+void init_pipe(struct pipe *pipe, struct palette *palette,
+        int initial_state,
         unsigned int width, unsigned int height);
 void move_pipe(struct pipe *pipe);
 bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height);
 char flip_pipe_state(struct pipe *pipe);
-void random_pipe_colour(struct pipe *pipe, int ncolours);
+void random_pipe_colour(struct pipe *pipe, struct palette *palette);
 bool should_flip_state(struct pipe *p, int min_len, float prob);
 char pipe_char(struct pipe *p, char old_state);
 

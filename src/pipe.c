@@ -10,6 +10,7 @@
 #include <wchar.h>
 #include "pipe.h"
 #include "util.h"
+#include "render.h"
 
 /* This file contains functions for managing the initialisation and movement of
  * a pipe.
@@ -299,7 +300,8 @@ int multicolumn_adjust(char **continuation) {
  * function makes sure to only assign initial positions at full-character
  * boundaries.
  */
-void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
+void init_pipe(struct pipe *pipe, struct palette *palette,
+        int initial_state,
         unsigned int width, unsigned int height){
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
@@ -309,7 +311,7 @@ void init_pipe(struct pipe *pipe, int ncolours, int initial_state,
         pipe->state = randrange(0, 4);
     else
         pipe->state = initial_state;
-    pipe->colour = randrange(0, ncolours);
+    random_pipe_colour(pipe, palette);
     pipe->length = 0;
     pipe->x = randrange(0, width / colwidth) * colwidth;
     pipe->y = randrange(0, height / colwidth) * colwidth;
@@ -345,8 +347,8 @@ bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
     return false;
 }
 
-void random_pipe_colour(struct pipe *pipe, int ncolours){
-    pipe->colour = randrange(0, ncolours);
+void random_pipe_colour(struct pipe *pipe, struct palette *palette){
+    pipe->colour = palette->colors[randrange(0, palette->num_colors)];
 }
 
 char flip_pipe_state(struct pipe *pipe){

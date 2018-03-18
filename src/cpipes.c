@@ -14,6 +14,7 @@
 
 #include "pipe.h"
 #include "render.h"
+#include "util.h"
 
 // Use noreturn on die() if possible
 #ifdef HAVE_STDNORETURN_H
@@ -108,6 +109,7 @@ int init_chars(void) {
     X(multicolumn_adjust(pipe_chars));
     return 0;
 }
+struct palette palette;
 
 int main(int argc, char **argv){
     srand(time(NULL));
@@ -124,19 +126,27 @@ int main(int argc, char **argv){
     cbreak();
     nodelay(stdscr, true);
     getmaxyx(stdscr, screen_height, screen_width);
-    init_colours();
+
+    int err = init_colour_palette(NULL, 0, &palette);
+    if(err < 0) {
+        fprintf(stderr, "Error initing palette (retval = %d)\n", err);
+        return 1;
+    }
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
-    for(unsigned int i=0; i<num_pipes;i++)
-        init_pipe(&pipes[i], COLORS, initial_state,
+    for(unsigned int i=0; i<num_pipes;i++) {
+        init_pipe(&pipes[i], &palette, initial_state,
             screen_width, screen_height);
+        random_pipe_colour(&pipes[i], &palette);
+    }
 
     animate(fps, render, &screen_width, &screen_height, &interrupted, NULL);
 
     curs_set(1);
     endwin();
     free(pipes);
+    palette_destroy(&palette);
     return 0;
 }
 
@@ -144,7 +154,7 @@ void render(unsigned int width, unsigned int height, void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i]);
         if(wrap_pipe(&pipes[i], width, height))
-            random_pipe_colour(&pipes[i], COLORS);
+            random_pipe_colour(&pipes[i], &palette);
 
         char old_state = pipes[i].state;
         if(should_flip_state(&pipes[i], min_len, prob)){

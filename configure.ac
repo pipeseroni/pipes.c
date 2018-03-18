@@ -69,6 +69,10 @@ AC_SEARCH_LIBS([iconv], [iconv], [],
 AC_SEARCH_LIBS([clock_gettime], [rt], [],
                [AC_MSG_ERROR(["clock_gettime is required for timing"])])
 
+# Some systems require libm for certain math functions
+AC_SEARCH_LIBS([fmod], [m], [],
+               [AC_MSG_ERROR(["fmod is required"])])
+
 # Use noreturn attribute if available
 AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
 
