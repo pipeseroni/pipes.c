@@ -8,7 +8,8 @@ enum COLOR_ERRS {
     ERR_TOO_MANY_COLORS = -2,
     ERR_CANNOT_CHANGE_COLOR = -3,
     ERR_NO_COLOR = -4,
-    ERR_OUT_OF_MEMORY = -5
+    ERR_OUT_OF_MEMORY = -5,
+    ERR_QUERY_UNSUPPORTED = -6
 };
 
 struct palette {
@@ -16,10 +17,16 @@ struct palette {
     int num_colors;
 };
 
+struct color_backup {
+    int num_colors;
+    char **escape_codes;
+};
+
 typedef void (*anim_function)(unsigned int width, unsigned int height,
         void *data);
 
-int init_colour_palette(int *colors, int num_colors, struct palette *palette);
+int init_colour_palette(int *colors, int num_colors,
+        struct palette *palette, struct color_backup *backup);
 
 void init_colours(void);
 void animate(int fps, anim_function renderer,
@@ -28,8 +35,9 @@ void animate(int fps, anim_function renderer,
 void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state);
 
-int * save_color_state(void);
-void restore_color_state(int *colors);
 void palette_destroy(struct palette *palette);
+int create_color_backup(int num_colors, struct color_backup *backup);
+void restore_colors(struct color_backup *backup);
+void free_colors(struct color_backup *backup);
 
 #endif //RENDER_H_

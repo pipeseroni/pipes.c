@@ -124,14 +124,20 @@ int main(int argc, char **argv){
     initscr();
     curs_set(0);
     cbreak();
-    nodelay(stdscr, true);
+    noecho();
+    setbuf(stdout, NULL);
     getmaxyx(stdscr, screen_height, screen_width);
 
-    int err = init_colour_palette(NULL, 0, &palette);
+    struct color_backup backup;
+    int err = init_colour_palette(NULL, 0, &palette, &backup);
     if(err < 0) {
         fprintf(stderr, "Error initing palette (retval = %d)\n", err);
         return 1;
     }
+
+    // Called after init_colour_palette because that needs to have a
+    // timeout on getch() to determine whether the query worked.
+    nodelay(stdscr, true);
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
@@ -145,6 +151,10 @@ int main(int argc, char **argv){
 
     curs_set(1);
     endwin();
+
+    restore_colors(&backup);
+    free_colors(&backup);
+
     free(pipes);
     palette_destroy(&palette);
     return 0;

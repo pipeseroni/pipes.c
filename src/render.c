@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <curses.h>
 #include <stdlib.h>
+#include <string.h>
 #include <term.h>
 #include "render.h"
 #include "pipe.h"
@@ -12,12 +13,16 @@
 
 #define NS 1000000000L //1ns
 
+#define ESCAPE_CODE_SIZE 256
+
 static int hsl2rgb(float hue, float sat, float light);
 static bool have_direct_colours(void);
 static int set_color_pair_direct(int color_index, int color);
 static int set_color_pair_indirect(int color_index, int color);
 static int set_pair(int pair_index, int fg, int bg);
 static int palette_size(void);
+
+static int query_terminal(const char *escape, char *buffer, int bufsz);
 
 // Cribbed straight from Wikipedia :)
 int hsl2rgb(float hue, float sat, float light) {
@@ -117,6 +122,9 @@ int palette_size(void) {
  * The colour palette should be freed using `palette_destroy` when it is no
  * longer needed.
  *
+ * If `backup` is non-`NULL`, then the terminal is queried for the escape
+ * codes used to reset the original colours. These are stored in `backup`.
+ *
  * This function will return 0 on success, and a negative value on failure. An
  * error is printed to standard output upon error. Possible error modes:
  *
@@ -142,7 +150,8 @@ int palette_size(void) {
  * - Alternatively, `ERR_OUT_OF_MEMORY` may be returned if allocation of the
  *   colour palette fails.
  */
-int init_colour_palette(int *colors, int num_colors, struct palette *palette) {
+int init_colour_palette(int *colors, int num_colors,
+        struct palette *palette, struct color_backup *backup) {
     if(!has_colors())
         return ERR_NO_COLOR;
     if(colors && !can_change_color())
@@ -161,6 +170,19 @@ int init_colour_palette(int *colors, int num_colors, struct palette *palette) {
             return ERR_TOO_MANY_COLORS;
         max_pipe_colors = num_colors;
     }
+
+    // Make backup of colours by querying terminal.
+    if(backup) {
+        if(!direct) {
+            int err = create_color_backup(max_pipe_colors, backup);
+            if(err != 0) {
+                return err;
+            }
+        } else {
+            backup->num_colors = 0;
+        }
+    }
+
     palette->num_colors = max_pipe_colors;
     palette->colors = malloc(sizeof(*palette->colors) * palette->num_colors);
     if(!palette->colors)
@@ -298,6 +320,121 @@ void animate(int fps, anim_function renderer,
         };
         nanosleep(&sleep_time, NULL);
     }
+}
+
+/**
+ * Some terminals (looking at you, urxvt), do not properly reset the
+ * terminal colours when ncurses exits. Some terminals support querying
+ * the current terminal colours (via OSC 4 ?), which should allow us to
+ * reset the colours later.
+ */
+int create_color_backup(int num_colors, struct color_backup *backup){
+    // Note the "+8"s in this: That's because we don't ever overwrite
+    // the first 8 colours.
+    int err = 0;
+
+    char **escape_codes;
+    escape_codes = malloc(sizeof(*escape_codes) * COLORS);
+    if(!escape_codes){
+        return -1;
+    }
+    backup->escape_codes = escape_codes;
+    backup->num_colors = num_colors;
+
+    char buffer[ESCAPE_CODE_SIZE];
+    int i;
+    for(i=0; i < num_colors; i++) {
+
+        // Query the value of colour "i". If the terminal understands the
+        // escape sequence, it will write the response to the standard input of
+        // the program, terminating with a BEL.
+        sprintf(buffer, "\033]4;%d;?\007", i + 8);
+        err = query_terminal(buffer, buffer, ESCAPE_CODE_SIZE);
+        if(err != 0){
+            fprintf(stderr, "Error reading from buffer: %d\n", err);
+            err = ERR_QUERY_UNSUPPORTED;
+            goto error;
+        }
+
+        // xterm and urxvt give different responses to the query. Xterm is
+        // sensible, and includes the colour index in the response
+        // (\033]4;i;rgb:), but urxvt doesn't (\033]4;rgb:).
+        // We get around this by explicitly inserting the index here if it
+        // is not present.
+        int ignore;
+        if(sscanf(buffer, "\033]%d;rgb", &ignore)) {
+            char *start = strstr(buffer, "rgb");
+
+            int escape_sz = snprintf(NULL, 0, "\033]4;%d;%s", i + 8, start);
+            if(escape_sz < 0) {
+                fprintf(stderr, "Error calculating length of escape buffer\n");
+                err = ERR_OUT_OF_MEMORY;
+                goto error;
+            }
+
+            char *escape_buf = calloc(escape_sz + 1, 1);
+            if(escape_sz < 0) {
+                perror("Error allocating escape code memory.");
+                err = ERR_OUT_OF_MEMORY;
+                goto error;
+            }
+
+            sprintf(escape_buf, "\033]4;%d;%s", i + 8, start);
+            escape_codes[i] = escape_buf;
+        }else{
+            escape_codes[i] = strdup(buffer);
+            if(!escape_codes[i]) {
+                perror("Error allocating escape code memory.");
+                err = ERR_OUT_OF_MEMORY;
+                goto error;
+            }
+        }
+    }
+    return 0;
+
+error:
+    for(i = i - 1; i > 0; i--)
+        free(escape_codes[i]);
+    free(escape_codes);
+    return err;
+}
+
+
+/** Print backup escape codes to terminal. */
+void restore_colors(struct color_backup *backup) {
+    for(int i=0; i < backup->num_colors; i++) {
+        putp(backup->escape_codes[i]);
+    }
+}
+
+/** Free the list of escape codes used for restoring colours. */
+void free_colors(struct color_backup *backup) {
+    for(int i=0; i < backup->num_colors; i++) {
+        free(backup->escape_codes[i]);
+    }
+}
+
+/**
+ * Write a query sequence to the terminal, and wait for a response.
+ * The reponse is written to `buffer`.
+ */
+int query_terminal(const char *escape, char *buffer, int bufsz) {
+    putp(escape);
+    int c;
+    int i = 0;
+    timeout(100);
+    do {
+        if(i >= bufsz)
+            return -1;
+
+        c = getch();
+        if(c == ERR)
+            return -2;
+
+        buffer[i++] = c;
+    } while(c != '\7');
+    buffer[i] = '\0';
+    return 0;
 }
 
 void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
