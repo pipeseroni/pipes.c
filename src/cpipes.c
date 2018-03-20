@@ -44,6 +44,7 @@ const char *usage =
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
+    "    --backup-colors Backup colours and restore when exiting.\n"
     "    -h, --help      This help message.\n";
 
 static struct option opts[] = {
@@ -53,6 +54,7 @@ static struct option opts[] = {
     {"length",  required_argument, 0,   'l'},
     {"prob",    required_argument, 0,   'r'},
     {"help",    no_argument,       0,   'h'},
+    {"backup-colors", no_argument, 0,   'b'},
     {0,         0,                 0,    0 }
 };
 
@@ -84,6 +86,13 @@ const char *selected_chars = NULL;
 
 char pipe_char_buf[CHAR_BUF_SZ];
 
+// Colour information stored here.
+struct palette palette;
+
+// Keep a separate pointer because this is optional.
+struct color_backup backup;
+struct color_backup *backup_ptr = NULL;
+
 // Convenience macro for bailing in init_chars
 #define X(a) do { \
         if( ((a)) == -1 ) { \
@@ -109,7 +118,6 @@ int init_chars(void) {
     X(multicolumn_adjust(pipe_chars));
     return 0;
 }
-struct palette palette;
 
 int main(int argc, char **argv){
     srand(time(NULL));
@@ -128,8 +136,7 @@ int main(int argc, char **argv){
     setbuf(stdout, NULL);
     getmaxyx(stdscr, screen_height, screen_width);
 
-    struct color_backup backup;
-    int err = init_colour_palette(NULL, 0, &palette, &backup);
+    int err = init_colour_palette(NULL, 0, &palette, backup_ptr);
     if(err < 0) {
         fprintf(stderr, "Error initing palette (retval = %d)\n", err);
         return 1;
@@ -152,8 +159,10 @@ int main(int argc, char **argv){
     curs_set(1);
     endwin();
 
-    restore_colors(&backup);
-    free_colors(&backup);
+    if(backup_ptr) {
+        restore_colors(backup_ptr);
+        free_colors(backup_ptr);
+    }
 
     free(pipes);
     palette_destroy(&palette);
@@ -242,6 +251,9 @@ void parse_options(int argc, char **argv){
                     usage_msg(1);
                     exit(1);
                 }
+                break;
+            case 'b':
+                backup_ptr = &backup;
                 break;
             case 'h':
                 usage_msg(0);
