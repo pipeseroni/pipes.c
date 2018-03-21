@@ -25,6 +25,7 @@
 
 void interrupt_signal(int param);
 void parse_options(int argc, char **argv);
+static void find_num_colours(int argc, char **argv);
 float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 noreturn void die(void);
@@ -44,6 +45,7 @@ const char *usage =
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
+    "    -c, --color=C   Add color C (in RRGGBB hexadecimal) to palette.\n"
     "    --backup-colors Backup colours and restore when exiting.\n"
     "    -h, --help      This help message.\n";
 
@@ -54,6 +56,7 @@ static struct option opts[] = {
     {"length",  required_argument, 0,   'l'},
     {"prob",    required_argument, 0,   'r'},
     {"help",    no_argument,       0,   'h'},
+    {"color",   required_argument, 0,   'c'},
     {"backup-colors", no_argument, 0,   'b'},
     {0,         0,                 0,    0 }
 };
@@ -88,6 +91,9 @@ char pipe_char_buf[CHAR_BUF_SZ];
 
 // Colour information stored here.
 struct palette palette;
+// Colours set by parse_options by the "-c" flag
+int *custom_colours = NULL;
+size_t num_custom_colours = 0;
 
 // Keep a separate pointer because this is optional.
 struct color_backup backup;
@@ -136,10 +142,12 @@ int main(int argc, char **argv){
     setbuf(stdout, NULL);
     getmaxyx(stdscr, screen_height, screen_width);
 
-    int err = init_colour_palette(NULL, 0, &palette, backup_ptr);
+    int err = init_colour_palette(
+            custom_colours, num_custom_colours,
+            &palette, backup_ptr);
     if(err < 0) {
         fprintf(stderr, "Error initing palette (retval = %d)\n", err);
-        return 1;
+        goto cleanup;
     }
 
     // Called after init_colour_palette because that needs to have a
@@ -156,6 +164,7 @@ int main(int argc, char **argv){
 
     animate(fps, render, &screen_width, &screen_height, &interrupted, NULL);
 
+cleanup:
     curs_set(1);
     endwin();
 
@@ -164,6 +173,7 @@ int main(int argc, char **argv){
         free_colors(backup_ptr);
     }
 
+    free(custom_colours);
     free(pipes);
     palette_destroy(&palette);
     return 0;
@@ -217,9 +227,36 @@ float parse_float_opt(const char *optname){
     return f_res;
 }
 
-void parse_options(int argc, char **argv){
+void find_num_colours(int argc, char **argv) {
+    opterr = 0;
+    // First work out how many colours were specified on the command line
     int c;
-    while((c = getopt_long(argc, argv, "p:f:al:r:i:h", opts, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "c:", opts, NULL)) != -1) {
+        if(c == 'c')
+            num_custom_colours++;
+    }
+    if(num_custom_colours > 0) {
+        custom_colours = malloc(sizeof(*custom_colours) * num_custom_colours);
+        if(!custom_colours) {
+            perror("Error allocating memory for colour palette.");
+            exit(1);
+        }
+    }
+    // Reset optind so we can do the proper parsing run
+    optind = 0;
+}
+
+void parse_options(int argc, char **argv){
+    opterr = 1;
+    int c;
+
+    find_num_colours(argc, argv);
+    // Current colour (`-c`) and index into `custom_colours`
+    size_t colour_index = 0;
+    int colour = 0;
+
+    optind = 0;
+    while((c = getopt_long(argc, argv, "p:f:al:r:i:c:h", opts, NULL)) != -1){
         switch(c){
             errno = 0;
             case 'p':
@@ -254,6 +291,13 @@ void parse_options(int argc, char **argv){
                 break;
             case 'b':
                 backup_ptr = &backup;
+                break;
+            case 'c':
+                if(sscanf(optarg, "%x", &colour) != 1) {
+                    fprintf(stderr, "Invalid colour '%s'\n", optarg);
+                    die();
+                }
+                custom_colours[colour_index++] = colour;
                 break;
             case 'h':
                 usage_msg(0);
