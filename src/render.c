@@ -15,6 +15,9 @@
 
 #define ESCAPE_CODE_SIZE 256
 
+// Number of reserved pairs in indirect mode (just colour pair 0)
+#define RESERVED_INDIRECT_PAIRS 1
+
 static int hsl2rgb(float hue, float sat, float light);
 static bool have_direct_colours(void);
 static int set_color_pair_direct(int color_index, int color);
@@ -92,15 +95,15 @@ int palette_size(void) {
     max_pipe_colors = min(max_pipe_colors, 32767);
 #endif
 
-    // If we *can* change colours, we remove 8 because we can't write to the
-    // default 8 colours. If we can't change colours, the we should use the
-    // full colour range, minus one because that one will be the backgorund.
+    // If we *can* change colours, we remove 1 because we can't write to colour
+    // pair 0. If we can't change colours, the we should use the full colour
+    // range, minus one because that one will be the background.
     //
     // If we're using direct colors, we never actually
     // call `init_color` or `init_extended_color`, so we don't have to worry
-    // about preserving the first 8 colours.
+    // about preserving any colours.
     if(can_change_color() && !direct)
-        max_pipe_colors -= 8;
+        max_pipe_colors -= RESERVED_INDIRECT_PAIRS;
     else if(!can_change_color())
         max_pipe_colors -= 1;
 
@@ -154,14 +157,17 @@ int init_colour_palette(int *colors, int num_colors,
         struct palette *palette, struct color_backup *backup) {
     if(!has_colors())
         return ERR_NO_COLOR;
-    if(colors && !can_change_color())
-        return ERR_CANNOT_CHANGE_COLOR;
-
-    start_color();
 
     // With direct colors, we set the color directly in the pair
     // e.g. init_extended_pair(i, COLOR_BLACK, rgb);
     bool direct = have_direct_colours();
+
+    // If we aren't using direct colours and we can't change colours to match
+    // the specified palette, that is an error.
+    if(!direct && (colors && !can_change_color()))
+        return ERR_CANNOT_CHANGE_COLOR;
+
+    start_color();
     int max_pipe_colors = palette_size();
 
     // Use supplied palette, if any.
@@ -190,9 +196,12 @@ int init_colour_palette(int *colors, int num_colors,
 
     // Set palette, either to the value specified in colors or to an HSL sweep.
     // Note that calls to init_color or init_extended_color must have the
-    // colour index increased by 8 to avoid writing to the default 8 colours.
+    // colour index increased by 1 to avoid writing to colour pair 0.
     for(int i=0; i < max_pipe_colors; i++) {
         if(!can_change_color() && !direct){
+            // Just use the colours in the default palette if we can't change
+            // colours. The colour is `i + 1` because we don't want to use
+            // the backgroudn colour for the foreground.
             palette->colors[i] = set_pair(i, i + 1, COLOR_BLACK);
         }else{
             int color;
@@ -203,9 +212,11 @@ int init_colour_palette(int *colors, int num_colors,
 
             int pair_index;
             if(direct) {
-                pair_index = set_color_pair_direct(i, color);
+                pair_index = set_color_pair_direct(
+                        i + RESERVED_INDIRECT_PAIRS, color);
             }else{
-                pair_index = set_color_pair_indirect(i, color);
+                pair_index = set_color_pair_indirect(
+                        i + RESERVED_INDIRECT_PAIRS, color);
             }
             if(pair_index < 0)
                 return pair_index;
@@ -253,7 +264,7 @@ int set_pair(int pair_index, int fg, int bg) {
  * Returns the ID of the new pair, or `ERR_CURSES_ERR` on error.
  *
  * Note that the color should be zero-indexed. This function internally
- * adds 8 to it to avoid overwriting any of the default colours.
+ * adds 1 to it to avoid overwriting any of the default colours.
  */
 int set_color_pair_indirect(int color_index, int color) {
     int r = ((color >> 16) & 0xFF) * 1000 / 255;
@@ -262,15 +273,15 @@ int set_color_pair_indirect(int color_index, int color) {
 
     int retval;
 #if HAVE_EXTENDED_COLOR
-    retval = init_extended_color(color_index + 8, r, g, b);
+    retval = init_extended_color(color_index, r, g, b);
 #else
-    retval = init_color(color_index + 8, r, g, b);
+    retval = init_color(color_index, r, g, b);
 #endif
     // Error initing color
     if(retval == ERR)
         return ERR_CURSES_ERR;
 
-    return set_pair(color_index, color_index + 8, COLOR_BLACK);
+    return set_pair(color_index, color_index, COLOR_BLACK);
 }
 
 /**
@@ -329,12 +340,10 @@ void animate(int fps, anim_function renderer,
  * reset the colours later.
  */
 int create_color_backup(int num_colors, struct color_backup *backup){
-    // Note the "+8"s in this: That's because we don't ever overwrite
-    // the first 8 colours.
     int err = 0;
 
     char **escape_codes;
-    escape_codes = malloc(sizeof(*escape_codes) * COLORS);
+    escape_codes = malloc(sizeof(*escape_codes) * num_colors);
     if(!escape_codes){
         return -1;
     }
@@ -348,7 +357,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
         // Query the value of colour "i". If the terminal understands the
         // escape sequence, it will write the response to the standard input of
         // the program, terminating with a BEL.
-        sprintf(buffer, "\033]4;%d;?\007", i + 8);
+        sprintf(buffer, "\033]4;%d;?\007", i + 1);
         err = query_terminal(buffer, buffer, ESCAPE_CODE_SIZE);
         if(err != 0){
             fprintf(stderr, "Error reading from buffer: %d\n", err);
@@ -365,7 +374,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
         if(sscanf(buffer, "\033]%d;rgb", &ignore)) {
             char *start = strstr(buffer, "rgb");
 
-            int escape_sz = snprintf(NULL, 0, "\033]4;%d;%s", i + 8, start);
+            int escape_sz = snprintf(NULL, 0, "\033]4;%d;%s", i + 1, start);
             if(escape_sz < 0) {
                 fprintf(stderr, "Error calculating length of escape buffer\n");
                 err = ERR_OUT_OF_MEMORY;
@@ -379,7 +388,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
                 goto error;
             }
 
-            sprintf(escape_buf, "\033]4;%d;%s", i + 8, start);
+            sprintf(escape_buf, "\033]4;%d;%s", i + 1, start);
             escape_codes[i] = escape_buf;
         }else{
             escape_codes[i] = strdup(buffer);
