@@ -20,3 +20,5 @@ test_locale_CFLAGS = -I$(srcdir)/src $(WARN_CFLAGS)
 test_locale_LDFLAGS = $(WARN_CFLAGS)
 test_locale_LDADD = $(CURSES_LIBS)
 test_locale_CPPFLAGS = $(CURSES_CFLAGS)
+
+EXTRA_DIST = LICENSE README.md
