@@ -1,6 +1,8 @@
 #ifndef RENDER_H_
 #define RENDER_H_
 #include <signal.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "pipe.h"
 
 enum COLOR_ERRS {
@@ -13,19 +15,19 @@ enum COLOR_ERRS {
 };
 
 struct palette {
-    int *colors;
-    int num_colors;
+    uint32_t *colors;
+    size_t num_colors;
 };
 
 struct color_backup {
-    int num_colors;
+    size_t num_colors;
     char **escape_codes;
 };
 
 typedef void (*anim_function)(unsigned int width, unsigned int height,
         void *data);
 
-int init_color_palette(int *colors, int num_colors,
+int init_color_palette(uint32_t *colors, size_t num_colors,
         struct palette *palette, struct color_backup *backup);
 
 void init_colors(void);
@@ -36,7 +38,7 @@ void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state);
 
 void palette_destroy(struct palette *palette);
-int create_color_backup(int num_colors, struct color_backup *backup);
+int create_color_backup(size_t num_colors, struct color_backup *backup);
 void restore_colors(struct color_backup *backup);
 void free_colors(struct color_backup *backup);
 

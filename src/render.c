@@ -4,7 +4,9 @@
 #include <time.h>
 #include <signal.h>
 #include <curses.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <term.h>
 #include "render.h"
@@ -20,10 +22,10 @@
 
 static int hsl2rgb(float hue, float sat, float light);
 static bool have_direct_colors(void);
-static int set_color_pair_direct(int color_index, int color);
-static int set_color_pair_indirect(int color_index, int color);
+static int set_color_pair_direct(int color_index, uint32_t color);
+static int set_color_pair_indirect(int color_index, uint32_t color);
 static int set_pair(int pair_index, int fg, int bg);
-static int palette_size(void);
+static size_t palette_size(void);
 
 static int query_terminal(const char *escape, char *buffer, int bufsz);
 
@@ -69,7 +71,7 @@ bool have_direct_colors(void) {
 }
 
 /// Returns the effective size of the palette that we can use.
-int palette_size(void) {
+size_t palette_size(void) {
     bool direct = have_direct_colors();
 
     // On terminals that support direct color, COLORS can be greater than
@@ -153,7 +155,7 @@ int palette_size(void) {
  * - Alternatively, `ERR_OUT_OF_MEMORY` may be returned if allocation of the
  *   color palette fails.
  */
-int init_color_palette(int *colors, int num_colors,
+int init_color_palette(uint32_t *colors, size_t num_colors,
         struct palette *palette, struct color_backup *backup) {
     if(!has_colors())
         return ERR_NO_COLOR;
@@ -168,7 +170,7 @@ int init_color_palette(int *colors, int num_colors,
         return ERR_CANNOT_CHANGE_COLOR;
 
     start_color();
-    int max_pipe_colors = palette_size();
+    size_t max_pipe_colors = palette_size();
 
     // Use supplied palette, if any.
     if(colors) {
@@ -197,7 +199,7 @@ int init_color_palette(int *colors, int num_colors,
     // Set palette, either to the value specified in colors or to an HSL sweep.
     // Note that calls to init_color or init_extended_color must have the
     // color index increased by 1 to avoid writing to color pair 0.
-    for(int i=0; i < max_pipe_colors; i++) {
+    for(size_t i=0; i < max_pipe_colors; i++) {
         if(!can_change_color() && !direct){
             // Just use the colors in the default palette if we can't change
             // colors. The color is `i + 1` because we don't want to use
@@ -266,7 +268,7 @@ int set_pair(int pair_index, int fg, int bg) {
  * Note that the color should be zero-indexed. This function internally
  * adds 1 to it to avoid overwriting any of the default colors.
  */
-int set_color_pair_indirect(int color_index, int color) {
+int set_color_pair_indirect(int color_index, uint32_t color) {
     int r = ((color >> 16) & 0xFF) * 1000 / 255;
     int g = ((color >>  8) & 0xFF) * 1000 / 255;
     int b = ((color      ) & 0xFF) * 1000 / 255;
@@ -289,7 +291,7 @@ int set_color_pair_indirect(int color_index, int color) {
  * `0xRRGGBB`. The index of the pair will be `color_index` if `alloc_pair`
  * is not supported; it can be arbitrary otherwise.
  */
-int set_color_pair_direct(int color_index, int color) {
+int set_color_pair_direct(int color_index, uint32_t color) {
     return set_pair(color_index, color, COLOR_BLACK);
 }
 
@@ -339,7 +341,7 @@ void animate(int fps, anim_function renderer,
  * the current terminal colors (via OSC 4 ?), which should allow us to
  * reset the colors later.
  */
-int create_color_backup(int num_colors, struct color_backup *backup){
+int create_color_backup(size_t num_colors, struct color_backup *backup){
     int err = 0;
 
     char **escape_codes;
@@ -351,13 +353,13 @@ int create_color_backup(int num_colors, struct color_backup *backup){
     backup->num_colors = num_colors;
 
     char buffer[ESCAPE_CODE_SIZE];
-    int i;
+    size_t i;
     for(i=0; i < num_colors; i++) {
 
         // Query the value of color "i". If the terminal understands the
         // escape sequence, it will write the response to the standard input of
         // the program, terminating with a BEL.
-        sprintf(buffer, "\033]4;%d;?\007", i + 1);
+        sprintf(buffer, "\033]4;%zu;?\007", i + 1);
         err = query_terminal(buffer, buffer, ESCAPE_CODE_SIZE);
         if(err != 0){
             fprintf(stderr, "Error reading from buffer: %d\n", err);
@@ -370,11 +372,11 @@ int create_color_backup(int num_colors, struct color_backup *backup){
         // (\033]4;i;rgb:), but urxvt doesn't (\033]4;rgb:).
         // We get around this by explicitly inserting the index here if it
         // is not present.
-        int ignore;
-        if(sscanf(buffer, "\033]%d;rgb", &ignore)) {
+        size_t ignore;
+        if(sscanf(buffer, "\033]%zu;rgb", &ignore)) {
             char *start = strstr(buffer, "rgb");
 
-            int escape_sz = snprintf(NULL, 0, "\033]4;%d;%s", i + 1, start);
+            int escape_sz = snprintf(NULL, 0, "\033]4;%zu;%s", i + 1, start);
             if(escape_sz < 0) {
                 fprintf(stderr, "Error calculating length of escape buffer\n");
                 err = ERR_OUT_OF_MEMORY;
@@ -388,7 +390,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
                 goto error;
             }
 
-            sprintf(escape_buf, "\033]4;%d;%s", i + 1, start);
+            sprintf(escape_buf, "\033]4;%zu;%s", i + 1, start);
             escape_codes[i] = escape_buf;
         }else{
             escape_codes[i] = strdup(buffer);
@@ -411,14 +413,14 @@ error:
 
 /** Print backup escape codes to terminal. */
 void restore_colors(struct color_backup *backup) {
-    for(int i=0; i < backup->num_colors; i++) {
+    for(size_t i=0; i < backup->num_colors; i++) {
         putp(backup->escape_codes[i]);
     }
 }
 
 /** Free the list of escape codes used for restoring colors. */
 void free_colors(struct color_backup *backup) {
-    for(int i=0; i < backup->num_colors; i++) {
+    for(size_t i=0; i < backup->num_colors; i++) {
         free(backup->escape_codes[i]);
     }
 }

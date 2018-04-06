@@ -1,7 +1,9 @@
 #include <config.h>
 
+#include <inttypes.h>
 #include <langinfo.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -92,7 +94,7 @@ char pipe_char_buf[CHAR_BUF_SZ];
 // Colour information stored here.
 struct palette palette;
 // Colours set by parse_options by the "-c" flag
-int *custom_colors = NULL;
+uint32_t *custom_colors = NULL;
 size_t num_custom_colors = 0;
 
 // Keep a separate pointer because this is optional.
@@ -253,7 +255,7 @@ void parse_options(int argc, char **argv){
     find_num_colors(argc, argv);
     // Current color (`-c`) and index into `custom_colors`
     size_t color_index = 0;
-    int color = 0;
+    uint32_t color = 0;
 
     optind = 0;
     while((c = getopt_long(argc, argv, "p:f:al:r:i:c:h", opts, NULL)) != -1){
@@ -293,7 +295,7 @@ void parse_options(int argc, char **argv){
                 backup_ptr = &backup;
                 break;
             case 'c':
-                if(sscanf(optarg, "%x", &color) != 1) {
+                if(sscanf(optarg, "%" SCNx32, &color) != 1) {
                     fprintf(stderr, "Invalid color '%s'\n", optarg);
                     die();
                 }
