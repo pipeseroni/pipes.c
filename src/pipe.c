@@ -311,7 +311,7 @@ void init_pipe(struct pipe *pipe, struct palette *palette,
         pipe->state = randrange(0, 4);
     else
         pipe->state = initial_state;
-    random_pipe_colour(pipe, palette);
+    random_pipe_color(pipe, palette);
     pipe->length = 0;
     pipe->x = randrange(0, width / colwidth) * colwidth;
     pipe->y = randrange(0, height / colwidth) * colwidth;
@@ -347,8 +347,8 @@ bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
     return false;
 }
 
-void random_pipe_colour(struct pipe *pipe, struct palette *palette){
-    pipe->colour = palette->colors[randrange(0, palette->num_colors)];
+void random_pipe_color(struct pipe *pipe, struct palette *palette){
+    pipe->color = palette->colors[randrange(0, palette->num_colors)];
 }
 
 char flip_pipe_state(struct pipe *pipe){

@@ -15,11 +15,11 @@
 
 #define ESCAPE_CODE_SIZE 256
 
-// Number of reserved pairs in indirect mode (just colour pair 0)
+// Number of reserved pairs in indirect mode (just color pair 0)
 #define RESERVED_INDIRECT_PAIRS 1
 
 static int hsl2rgb(float hue, float sat, float light);
-static bool have_direct_colours(void);
+static bool have_direct_colors(void);
 static int set_color_pair_direct(int color_index, int color);
 static int set_color_pair_indirect(int color_index, int color);
 static int set_pair(int pair_index, int fg, int bg);
@@ -55,7 +55,7 @@ int hsl2rgb(float hue, float sat, float light) {
 
 // Check whether this terminal has the RGB capability (direct colors).
 // This is adapted from `parse_rgb.h` header with the ncurses test programs.
-bool have_direct_colours(void) {
+bool have_direct_colors(void) {
     if (tigetflag("RGB") > 0) {
         return true;
     } else if (tigetnum("RGB") > 0) {
@@ -70,15 +70,15 @@ bool have_direct_colours(void) {
 
 /// Returns the effective size of the palette that we can use.
 int palette_size(void) {
-    bool direct = have_direct_colours();
+    bool direct = have_direct_colors();
 
-    // On terminals that support direct colour, COLORS can be greater than
-    // COLOR_PAIRS. We can only display `COLOR_PAIRS` different colours,
+    // On terminals that support direct color, COLORS can be greater than
+    // COLOR_PAIRS. We can only display `COLOR_PAIRS` different colors,
     // though, so that is the size of our palette.
     //
-    // Note that for terminals that do not support direct colour, we reduce the
-    // possible number of colours by 8, because we should not alter the default
-    // 8 colours.
+    // Note that for terminals that do not support direct color, we reduce the
+    // possible number of colors by 8, because we should not alter the default
+    // 8 colors.
     int max_pipe_colors = min(COLORS, COLOR_PAIRS);
 
 #if !HAVE_ALLOC_PAIR
@@ -91,17 +91,17 @@ int palette_size(void) {
 
 #if !HAVE_EXTENDED_COLOR
     // Similarly, if we cannot call `init_extended_color`, then we cannot
-    // set more than 32767 colours, no matter how many pairs we have.
+    // set more than 32767 colors, no matter how many pairs we have.
     max_pipe_colors = min(max_pipe_colors, 32767);
 #endif
 
-    // If we *can* change colours, we remove 1 because we can't write to colour
-    // pair 0. If we can't change colours, the we should use the full colour
+    // If we *can* change colors, we remove 1 because we can't write to color
+    // pair 0. If we can't change colors, the we should use the full color
     // range, minus one because that one will be the background.
     //
     // If we're using direct colors, we never actually
     // call `init_color` or `init_extended_color`, so we don't have to worry
-    // about preserving any colours.
+    // about preserving any colors.
     if(can_change_color() && !direct)
         max_pipe_colors -= RESERVED_INDIRECT_PAIRS;
     else if(!can_change_color())
@@ -113,56 +113,56 @@ int palette_size(void) {
 /**
  * If `colors` is not `NULL`, then the color palette is initialised to each of
  * the `num_colors` elements in `colors`. Colors are interpreted as `0xRRGGBB`.
- * Each colour is assigned a palette ID (color pair number, in curses-speak),
- * which are returned in order in `palette->colors`. The number of colours in
+ * Each color is assigned a palette ID (color pair number, in curses-speak),
+ * which are returned in order in `palette->colors`. The number of colors in
  * the palette is returned in `palette->num_colors`.
  *
  * In the special case that `palette` is non-NULL, but `num_colors` is zero,
  * `palette` is set to the default palette.  The default color palette is a
- * sweep of HSL space with maximum saturation and lightness. Each colour is
+ * sweep of HSL space with maximum saturation and lightness. Each color is
  * evenly spaced in hue space.
  *
- * The colour palette should be freed using `palette_destroy` when it is no
+ * The color palette should be freed using `palette_destroy` when it is no
  * longer needed.
  *
  * If `backup` is non-`NULL`, then the terminal is queried for the escape
- * codes used to reset the original colours. These are stored in `backup`.
+ * codes used to reset the original colors. These are stored in `backup`.
  *
  * This function will return 0 on success, and a negative value on failure. An
  * error is printed to standard output upon error. Possible error modes:
  *
- * - Specifying more than `COLOR_PAIRS` colours (return `ERR_TOO_MANY_COLORS`).
+ * - Specifying more than `COLOR_PAIRS` colors (return `ERR_TOO_MANY_COLORS`).
  *
- * - Specifying more than 32767 colours on a system that does not support
+ * - Specifying more than 32767 colors on a system that does not support
  *   `alloc_pair`. On systems without `alloc_pair`, the classic `init_pair`
  *   interface must be used, which only supports as many numbers as can fit
  *   in the positive part of a signed 16-bit short (return
  *   `ERR_TOO_MANY_COLORS`).
  *
- * - Specifying colours in a terminal that does not support redefining colours.
+ * - Specifying colors in a terminal that does not support redefining colors.
  *   That is, setting `colors` to a non-`NULL` value when `can_change_color` is
  *   false results in an error (return `ERR_CANNOT_CHANGE_COLOR`). If the
  *   default palette is used, there is no error; instead, the default palette
  *   is the hardcoded terminal palette.
  *
- * - If colours are not supported (return `ERR_NO_COLOR`).
+ * - If colors are not supported (return `ERR_NO_COLOR`).
  *
- * - If an error is encountered by ncurses when allocating colours or colour
+ * - If an error is encountered by ncurses when allocating colors or color
  *   pairs, `ERR_CURSES_ERR` is returned.
  *
  * - Alternatively, `ERR_OUT_OF_MEMORY` may be returned if allocation of the
- *   colour palette fails.
+ *   color palette fails.
  */
-int init_colour_palette(int *colors, int num_colors,
+int init_color_palette(int *colors, int num_colors,
         struct palette *palette, struct color_backup *backup) {
     if(!has_colors())
         return ERR_NO_COLOR;
 
     // With direct colors, we set the color directly in the pair
     // e.g. init_extended_pair(i, COLOR_BLACK, rgb);
-    bool direct = have_direct_colours();
+    bool direct = have_direct_colors();
 
-    // If we aren't using direct colours and we can't change colours to match
+    // If we aren't using direct colors and we can't change colors to match
     // the specified palette, that is an error.
     if(!direct && (colors && !can_change_color()))
         return ERR_CANNOT_CHANGE_COLOR;
@@ -177,7 +177,7 @@ int init_colour_palette(int *colors, int num_colors,
         max_pipe_colors = num_colors;
     }
 
-    // Make backup of colours by querying terminal.
+    // Make backup of colors by querying terminal.
     if(backup) {
         if(!direct) {
             int err = create_color_backup(max_pipe_colors, backup);
@@ -196,12 +196,12 @@ int init_colour_palette(int *colors, int num_colors,
 
     // Set palette, either to the value specified in colors or to an HSL sweep.
     // Note that calls to init_color or init_extended_color must have the
-    // colour index increased by 1 to avoid writing to colour pair 0.
+    // color index increased by 1 to avoid writing to color pair 0.
     for(int i=0; i < max_pipe_colors; i++) {
         if(!can_change_color() && !direct){
-            // Just use the colours in the default palette if we can't change
-            // colours. The colour is `i + 1` because we don't want to use
-            // the backgroudn colour for the foreground.
+            // Just use the colors in the default palette if we can't change
+            // colors. The color is `i + 1` because we don't want to use
+            // the backgroudn color for the foreground.
             palette->colors[i] = set_pair(i, i + 1, COLOR_BLACK);
         }else{
             int color;
@@ -233,7 +233,7 @@ void palette_destroy(struct palette *palette) {
 
 
 /**
- * Set the colour pair `pair_index` to the given colour in as version agnostic
+ * Set the color pair `pair_index` to the given color in as version agnostic
  * a way as possible. If `alloc_pair` is available, then `pair_index` is
  * ignored; otherwise it is passed as the pair ID to `init_pair`.
  *
@@ -256,7 +256,7 @@ int set_pair(int pair_index, int fg, int bg) {
 }
 
 /**
- * Set the foreground of a colour pair to `color` (in `0xRRGGBB` form).
+ * Set the foreground of a color pair to `color` (in `0xRRGGBB` form).
  * The index `color_index` will be used as the pair index if
  * `alloc_pair` is not supported: otherwise, the index returned can be
  * unrelated.
@@ -264,7 +264,7 @@ int set_pair(int pair_index, int fg, int bg) {
  * Returns the ID of the new pair, or `ERR_CURSES_ERR` on error.
  *
  * Note that the color should be zero-indexed. This function internally
- * adds 1 to it to avoid overwriting any of the default colours.
+ * adds 1 to it to avoid overwriting any of the default colors.
  */
 int set_color_pair_indirect(int color_index, int color) {
     int r = ((color >> 16) & 0xFF) * 1000 / 255;
@@ -285,7 +285,7 @@ int set_color_pair_indirect(int color_index, int color) {
 }
 
 /**
- * Set the foreground colour of a pair to `color`, given in the form
+ * Set the foreground color of a pair to `color`, given in the form
  * `0xRRGGBB`. The index of the pair will be `color_index` if `alloc_pair`
  * is not supported; it can be arbitrary otherwise.
  */
@@ -335,9 +335,9 @@ void animate(int fps, anim_function renderer,
 
 /**
  * Some terminals (looking at you, urxvt), do not properly reset the
- * terminal colours when ncurses exits. Some terminals support querying
- * the current terminal colours (via OSC 4 ?), which should allow us to
- * reset the colours later.
+ * terminal colors when ncurses exits. Some terminals support querying
+ * the current terminal colors (via OSC 4 ?), which should allow us to
+ * reset the colors later.
  */
 int create_color_backup(int num_colors, struct color_backup *backup){
     int err = 0;
@@ -354,7 +354,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
     int i;
     for(i=0; i < num_colors; i++) {
 
-        // Query the value of colour "i". If the terminal understands the
+        // Query the value of color "i". If the terminal understands the
         // escape sequence, it will write the response to the standard input of
         // the program, terminating with a BEL.
         sprintf(buffer, "\033]4;%d;?\007", i + 1);
@@ -366,7 +366,7 @@ int create_color_backup(int num_colors, struct color_backup *backup){
         }
 
         // xterm and urxvt give different responses to the query. Xterm is
-        // sensible, and includes the colour index in the response
+        // sensible, and includes the color index in the response
         // (\033]4;i;rgb:), but urxvt doesn't (\033]4;rgb:).
         // We get around this by explicitly inserting the index here if it
         // is not present.
@@ -416,7 +416,7 @@ void restore_colors(struct color_backup *backup) {
     }
 }
 
-/** Free the list of escape codes used for restoring colours. */
+/** Free the list of escape codes used for restoring colors. */
 void free_colors(struct color_backup *backup) {
     for(int i=0; i < backup->num_colors; i++) {
         free(backup->escape_codes[i]);
@@ -450,7 +450,7 @@ void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state){
 
     move(p->y, p->x);
-    attr_set(A_NORMAL, 1, &p->colour);
+    attr_set(A_NORMAL, 1, &p->color);
     if(old_state != new_state) {
         addstr(transition_char(trans, old_state, new_state));
     }else{

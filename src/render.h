@@ -25,10 +25,10 @@ struct color_backup {
 typedef void (*anim_function)(unsigned int width, unsigned int height,
         void *data);
 
-int init_colour_palette(int *colors, int num_colors,
+int init_color_palette(int *colors, int num_colors,
         struct palette *palette, struct color_backup *backup);
 
-void init_colours(void);
+void init_colors(void);
 void animate(int fps, anim_function renderer,
         unsigned int *width, unsigned int *height,
         volatile sig_atomic_t *interrupted, void *data);
