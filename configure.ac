@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 
-# Package version from `git describe --always`
+# Package version from `git describe`
 AC_INIT([pipes.c],
-        m4_esyscmd_s([git describe --always | sed 's/^v//' ]),
+        m4_esyscmd_s([git describe --always --tags --dirty | sed 's/^v//' ]),
         [stefans.mezulis@gmail.com])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/cpipes.c])
