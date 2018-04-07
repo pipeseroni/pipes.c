@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <term.h>
+#include "err.h"
 #include "render.h"
 #include "pipe.h"
 #include "util.h"
@@ -27,7 +28,7 @@ static int set_color_pair_indirect(int color_index, uint32_t color);
 static int set_pair(int pair_index, int fg, int bg);
 static size_t palette_size(void);
 
-static int query_terminal(const char *escape, char *buffer, int bufsz);
+static cpipes_errno query_terminal(const char *escape, char *buffer, int bufsz);
 
 // Cribbed straight from Wikipedia :)
 int hsl2rgb(float hue, float sat, float light) {
@@ -155,10 +156,13 @@ size_t palette_size(void) {
  * - Alternatively, `ERR_OUT_OF_MEMORY` may be returned if allocation of the
  *   color palette fails.
  */
-int init_color_palette(uint32_t *colors, size_t num_colors,
+cpipes_errno init_color_palette(uint32_t *colors, size_t num_colors,
         struct palette *palette, struct color_backup *backup) {
-    if(!has_colors())
+    clear_error();
+    if(!has_colors()) {
+        set_error(ERR_NO_COLOR);
         return ERR_NO_COLOR;
+    }
 
     // With direct colors, we set the color directly in the pair
     // e.g. init_extended_pair(i, COLOR_BLACK, rgb);
@@ -166,26 +170,29 @@ int init_color_palette(uint32_t *colors, size_t num_colors,
 
     // If we aren't using direct colors and we can't change colors to match
     // the specified palette, that is an error.
-    if(!direct && (colors && !can_change_color()))
+    if(!direct && (colors && !can_change_color())) {
+        set_error(ERR_CANNOT_CHANGE_COLOR);
         return ERR_CANNOT_CHANGE_COLOR;
+    }
 
     start_color();
     size_t max_pipe_colors = palette_size();
 
     // Use supplied palette, if any.
     if(colors) {
-        if(num_colors > max_pipe_colors)
+        if(num_colors > max_pipe_colors) {
+            set_error(ERR_TOO_MANY_COLORS, num_colors, max_pipe_colors);
             return ERR_TOO_MANY_COLORS;
+        }
         max_pipe_colors = num_colors;
     }
 
     // Make backup of colors by querying terminal.
     if(backup) {
         if(!direct) {
-            int err = create_color_backup(max_pipe_colors, backup);
-            if(err != 0) {
+            cpipes_errno err = create_color_backup(max_pipe_colors, backup);
+            if(err)
                 return err;
-            }
         } else {
             backup->num_colors = 0;
         }
@@ -193,8 +200,10 @@ int init_color_palette(uint32_t *colors, size_t num_colors,
 
     palette->num_colors = max_pipe_colors;
     palette->colors = malloc(sizeof(*palette->colors) * palette->num_colors);
-    if(!palette->colors)
+    if(!palette->colors) {
+        set_error(ERR_OUT_OF_MEMORY);
         return ERR_OUT_OF_MEMORY;
+    }
 
     // Set palette, either to the value specified in colors or to an HSL sweep.
     // Note that calls to init_color or init_extended_color must have the
@@ -220,8 +229,10 @@ int init_color_palette(uint32_t *colors, size_t num_colors,
                 pair_index = set_color_pair_indirect(
                         i + RESERVED_INDIRECT_PAIRS, color);
             }
-            if(pair_index < 0)
+            if(pair_index < 0) {
+                set_error(ERR_CURSES_ERR, "Setting color pair failed");
                 return pair_index;
+            }
             palette->colors[i] = pair_index;
         }
     }
@@ -341,14 +352,17 @@ void animate(int fps, anim_function renderer,
  * the current terminal colors (via OSC 4 ?), which should allow us to
  * reset the colors later.
  */
-int create_color_backup(size_t num_colors, struct color_backup *backup){
-    int err = 0;
+cpipes_errno create_color_backup(size_t num_colors,
+        struct color_backup *backup){
+    cpipes_errno err = 0;
 
     char **escape_codes;
     escape_codes = malloc(sizeof(*escape_codes) * num_colors);
-    if(!escape_codes){
-        return -1;
+    if(!escape_codes) {
+        set_error(ERR_OUT_OF_MEMORY);
+        return ERR_OUT_OF_MEMORY;
     }
+
     backup->escape_codes = escape_codes;
     backup->num_colors = num_colors;
 
@@ -361,9 +375,10 @@ int create_color_backup(size_t num_colors, struct color_backup *backup){
         // the program, terminating with a BEL.
         sprintf(buffer, "\033]4;%zu;?\007", i + 1);
         err = query_terminal(buffer, buffer, ESCAPE_CODE_SIZE);
-        if(err != 0){
-            fprintf(stderr, "Error reading from buffer: %d\n", err);
-            err = ERR_QUERY_UNSUPPORTED;
+        if(err) {
+            add_error_info(
+                "Could not back up color codes. Terminal does not "
+                "support querying colors.");
             goto error;
         }
 
@@ -378,14 +393,15 @@ int create_color_backup(size_t num_colors, struct color_backup *backup){
 
             int escape_sz = snprintf(NULL, 0, "\033]4;%zu;%s", i + 1, start);
             if(escape_sz < 0) {
-                fprintf(stderr, "Error calculating length of escape buffer\n");
-                err = ERR_OUT_OF_MEMORY;
+                set_error(ERR_C_ERROR,
+                        "'snprintf' to calculate length of escape buffer");
+                err = ERR_C_ERROR;
                 goto error;
             }
 
             char *escape_buf = calloc(escape_sz + 1, 1);
             if(escape_sz < 0) {
-                perror("Error allocating escape code memory.");
+                set_error(ERR_OUT_OF_MEMORY);
                 err = ERR_OUT_OF_MEMORY;
                 goto error;
             }
@@ -395,7 +411,7 @@ int create_color_backup(size_t num_colors, struct color_backup *backup){
         }else{
             escape_codes[i] = strdup(buffer);
             if(!escape_codes[i]) {
-                perror("Error allocating escape code memory.");
+                set_error(ERR_OUT_OF_MEMORY);
                 err = ERR_OUT_OF_MEMORY;
                 goto error;
             }
@@ -429,18 +445,22 @@ void free_colors(struct color_backup *backup) {
  * Write a query sequence to the terminal, and wait for a response.
  * The reponse is written to `buffer`.
  */
-int query_terminal(const char *escape, char *buffer, int bufsz) {
+cpipes_errno query_terminal(const char *escape, char *buffer, int bufsz) {
     putp(escape);
     int c;
     int i = 0;
     timeout(100);
     do {
-        if(i >= bufsz)
-            return -1;
+        if(i >= bufsz) {
+            set_error(ERR_BUFFER_TOO_SMALL, i, bufsz);
+            return ERR_BUFFER_TOO_SMALL;
+        }
 
         c = getch();
-        if(c == ERR)
-            return -2;
+        if(c == ERR) {
+            set_error(ERR_QUERY_UNSUPPORTED);
+            return ERR_QUERY_UNSUPPORTED;
+        }
 
         buffer[i++] = c;
     } while(c != '\7');

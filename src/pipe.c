@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <wchar.h>
+#include "err.h"
 #include "pipe.h"
 #include "util.h"
 #include "render.h"
@@ -99,16 +100,16 @@ static bool utf8_continuation(char byte) {
  * buflen:
  *      Space in bytes available in `utf8_bytes`.
  *
- * This function will return 0 upon success, or -1 upon error. Error messages
- * will be written to standard output.
+ * This function will return 0 upon success, or a negative number upon error.
  */
-int locale_to_utf8(char *locale_bytes, char *utf8_bytes,
+cpipes_errno locale_to_utf8(char *locale_bytes, char *utf8_bytes,
         const char *from_charset, size_t buflen) {
     if(!strcmp(from_charset, "UTF-8")){
         // No need to run iconv if we are already in UTF-8
         if(strlen(locale_bytes) >= buflen){
-            fprintf(stderr, "Output buffer too small.\n");
-            return -1;
+            // Add 1 to strlen for terminating nul
+            set_error(ERR_BUFFER_TOO_SMALL, buflen, strlen(locale_bytes) + 1);
+            return ERR_BUFFER_TOO_SMALL;
         }
         strncpy(utf8_bytes, locale_bytes, buflen);
         return 0;
@@ -116,8 +117,10 @@ int locale_to_utf8(char *locale_bytes, char *utf8_bytes,
 
     iconv_t cd = iconv_open("UTF-8", from_charset);
     if(cd == (iconv_t) -1) {
-        perror("Error intialising iconv for charset conversion.");
-        return -1;
+        int errno_copy = errno;
+        set_error(ERR_ICONV_ERROR);
+        add_error_info("%s", strerror(errno_copy));
+        return ERR_ICONV_ERROR;
     }
 
     // Length of string plus terminating nul byte, which we also want to
@@ -127,9 +130,12 @@ int locale_to_utf8(char *locale_bytes, char *utf8_bytes,
     size_t nconv = iconv(cd, &locale_bytes, &in_left, &utf8_bytes, &out_left);
 
     if(nconv == (size_t) -1){
-        perror("Error converting pipe chars to UTF-8");
+        int errno_copy = errno;
+        set_error(ERR_ICONV_ERROR);
+        add_error_info("Error converting pipe characters to UTF-8.");
+        add_error_info("%s", strerror(errno_copy));
         iconv_close(cd);
-        return -1;
+        return ERR_ICONV_ERROR;
     }
     iconv_close(cd);
     return 0;
@@ -162,18 +168,22 @@ int locale_to_utf8(char *locale_bytes, char *utf8_bytes,
  * to_charset:
  *      Name of the character set into which we are converting.
  *
- * This function will return 0 on success or -1 on failre. Error messages are
- * printed to stderr on error.
+ * This function will return 0 on success or a negative number on error.
  */
-int utf8_to_locale(
+cpipes_errno utf8_to_locale(
         char *utf8_chars,
         char *out_chars, size_t buflen,
         const char *to_charset){
 
     iconv_t cd = iconv_open(to_charset, "UTF-8");
     if(cd == (iconv_t) -1){
-        perror("Error converting characters");
-        return -1;
+        int errno_copy = errno;
+        set_error(ERR_ICONV_ERROR);
+        add_error_info(
+            "Error initialising iconv for UTF-8 to %s conversion.",
+            to_charset);
+        add_error_info("Iconv error: %s", strerror(errno_copy));
+        return ERR_ICONV_ERROR;
     }
 
     char *utf8_char_start = utf8_chars;
@@ -183,9 +193,9 @@ int utf8_to_locale(
     // i is index into utf8 array
     for(size_t i = 1; i <= strlen(utf8_chars); i++) {
         if(remaining_bytes <= 0){
-            fprintf(stderr, "Output buffer too small\n");
+            set_error(ERR_BUFFER_TOO_SMALL, buflen, strlen(utf8_chars));
             iconv_close(cd);
-            return -1;
+            return ERR_BUFFER_TOO_SMALL;
         }
 
         if(!utf8_continuation(utf8_chars[i])) {
@@ -195,9 +205,10 @@ int utf8_to_locale(
                 &utf8_char_start, &inbytes,
                 &locale_char_start, &remaining_bytes);
             if(nconv == (size_t) -1){
-                perror("Error converting UTF8 to target locale");
+                set_error(ERR_ICONV_ERROR);
+                add_error_info("Error converting UTF8 to %s", to_charset);
                 iconv_close(cd);
-                return -1;
+                return ERR_ICONV_ERROR;
             }
             (*locale_char_start) = '\0';
             locale_char_start++;
@@ -231,9 +242,9 @@ int utf8_to_locale(
  *      Two-character list containing the horizontal and vertical continuation
  *      characters.
  *
- * This function will return 0 on success or -1 on error.
+ * This function will return 0 on success or a negative number on error.
  */
-int assign_matrices(char *pipe_chars,
+void assign_matrices(char *pipe_chars,
         char **transition, char **continuation) {
 
     continuation[0] = continuation[1] = NULL;
@@ -272,25 +283,26 @@ int assign_matrices(char *pipe_chars,
                 break;
             default:
                 // No way to reach here.
-                return -1;
+                return;
         }
         nchars++;
         c = &pipe_chars[i + 1];
     }
-    return 0;
 }
 
 /** Adjust possible states (i.e. the `states` global) to reflect width of
  * continuation chars. If the pipe continuation characters take two columns to
  * display, alter the possible left/right pipe velocities to reflect that.
  *
- * This function will return -1 on error (e.g. invalid byte sequence) or 0
+ * This function will ERR_C_ERROR on error (e.g. invalid byte sequence) or 0
  * on success.
  */
-int multicolumn_adjust(char **continuation) {
+cpipes_errno multicolumn_adjust(char **continuation) {
     size_t width = max(charwidth(continuation[0]), charwidth(continuation[1]));
-    if(width == (size_t) -1)
-        return -1;
+    if(width == (size_t) -1) {
+        set_error(ERR_C_ERROR, "charwidth");
+        return ERR_C_ERROR;
+    }
     states[0][0] = width;
     states[2][0] = -width;
     return 0;

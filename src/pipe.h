@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "err.h"
 
 //States and transition characters
 extern char states[][2];
@@ -44,14 +45,14 @@ char pipe_char(struct pipe *p, char old_state);
 
 const char * transition_char(char **list, int row, int col);
 
-int locale_to_utf8(char *locale_bytes, char *utf8_bytes,
+cpipes_errno locale_to_utf8(char *locale_bytes, char *utf8_bytes,
         const char *from_charset, size_t buflen);
-int utf8_to_locale(
+cpipes_errno utf8_to_locale(
         char *utf8_chars,
         char *out_chars, size_t buflen,
         const char *to_charset);
-int assign_matrices(char *pipe_chars,
+void assign_matrices(char *pipe_chars,
         char **transition, char **continuation);
-int multicolumn_adjust(char **continuation);
+cpipes_errno multicolumn_adjust(char **continuation);
 
 #endif //PIPE_H_

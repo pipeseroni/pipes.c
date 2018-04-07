@@ -122,12 +122,13 @@ int init_chars(void) {
 
     X(locale_to_utf8(inbuf, utf8buf, source_charset, CHAR_BUF_SZ));
     X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset));
-    X(assign_matrices(pipe_char_buf, trans, pipe_chars));
+    assign_matrices(pipe_char_buf, trans, pipe_chars);
     X(multicolumn_adjust(pipe_chars));
     return 0;
 }
 
 int main(int argc, char **argv){
+    cpipes_errno err = 0;
     srand(time(NULL));
     setlocale(LC_ALL, "");
     //Set a flag upon interrupt to allow proper cleaning
@@ -144,13 +145,11 @@ int main(int argc, char **argv){
     setbuf(stdout, NULL);
     getmaxyx(stdscr, screen_height, screen_width);
 
-    int err = init_color_palette(
+    err = init_color_palette(
             custom_colors, num_custom_colors,
             &palette, backup_ptr);
-    if(err < 0) {
-        fprintf(stderr, "Error initing palette (retval = %d)\n", err);
+    if(err)
         goto cleanup;
-    }
 
     // Called after init_color_palette because that needs to have a
     // timeout on getch() to determine whether the query worked.
@@ -169,6 +168,9 @@ int main(int argc, char **argv){
 cleanup:
     curs_set(1);
     endwin();
+
+    if(err)
+        print_error();
 
     if(backup_ptr) {
         restore_colors(backup_ptr);
