@@ -9,7 +9,7 @@ cpipes_SOURCES = src/cpipes.c \
 				src/render.c src/render.h \
 				src/util.c src/util.h
 cpipes_CFLAGS = $(WARN_CFLAGS)
-cpipes_LDFLAGS = $(WARN_CFLAGS)
+cpipes_LDFLAGS = $(WARN_LDFLAGS)
 cpipes_LDADD = $(CURSES_LIBS)
 cpipes_CPPFLAGS = $(CURSES_CFLAGS)
 
@@ -17,7 +17,7 @@ test_locale_SOURCES = t/locale.c \
 					  src/pipe.c src/pipe.h \
 					  src/util.c src/util.h
 test_locale_CFLAGS = -I$(srcdir)/src $(WARN_CFLAGS)
-test_locale_LDFLAGS = $(WARN_CFLAGS)
+test_locale_LDFLAGS = $(WARN_LDFLAGS)
 test_locale_LDADD = $(CURSES_LIBS)
 test_locale_CPPFLAGS = $(CURSES_CFLAGS)
 
