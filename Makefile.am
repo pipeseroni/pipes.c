@@ -1,7 +1,6 @@
 bin_PROGRAMS = cpipes
 
 check_PROGRAMS = test_locale
-TEST_LOG_DRIVER = prove
 TESTS = test_locale
 
 cpipes_SOURCES = src/cpipes.c \
@@ -16,7 +15,8 @@ cpipes_CPPFLAGS = $(CURSES_CFLAGS)
 
 test_locale_SOURCES = t/locale.c \
 					  src/pipe.c src/pipe.h \
-					  src/util.c src/util.h
+					  src/util.c src/util.h \
+					  src/err.c src/err.h
 test_locale_CFLAGS = -I$(srcdir)/src $(WARN_CFLAGS)
 test_locale_LDFLAGS = $(WARN_LDFLAGS)
 test_locale_LDADD = $(CURSES_LIBS)
