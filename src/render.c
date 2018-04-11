@@ -420,9 +420,11 @@ cpipes_errno create_color_backup(size_t num_colors,
     return 0;
 
 error:
-    for(i = i - 1; i > 0; i--)
-        free(escape_codes[i]);
+    while(i > 0)
+        free(escape_codes[--i]);
     free(escape_codes);
+    backup->escape_codes = NULL;
+    backup->num_colors = 0;
     return err;
 }
 
