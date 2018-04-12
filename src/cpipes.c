@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include "canvas.h"
 #include "pipe.h"
 #include "render.h"
 #include "util.h"
@@ -32,11 +33,17 @@ float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 noreturn void die(void);
 void usage_msg(int exitval);
-void render(unsigned int width, unsigned int height, void *data);
+void render(struct canvas *canvas, void *data);
 int init_chars(void);
+
+// Includes screen width, height, palette and any color backups.
+static struct canvas canvas;
 
 //If set >= zero, this initial state is used.
 int initial_state = -1;
+
+// If true, attempt to make a backup of the terminal's colors
+bool backup_colors = false;
 
 const char *usage =
     "Usage: cpipes [OPTIONS]\n"
@@ -70,9 +77,6 @@ struct pipe *pipes;
 //Signal flag for interrupts
 volatile sig_atomic_t interrupted = 0;
 
-//Width and height of terminal (in chars and lines)
-unsigned int screen_width, screen_height;
-
 unsigned int num_pipes = 20;
 float fps = 60;
 float prob = 0.1;
@@ -91,15 +95,9 @@ const char *selected_chars = NULL;
 
 char pipe_char_buf[CHAR_BUF_SZ];
 
-// Colour information stored here.
-struct palette palette;
 // Colours set by parse_options by the "-c" flag
 uint32_t *custom_colors = NULL;
 size_t num_custom_colors = 0;
-
-// Keep a separate pointer because this is optional.
-struct color_backup backup;
-struct color_backup *backup_ptr = NULL;
 
 // Convenience macro for bailing in init_chars
 #define X(a) do { \
@@ -143,11 +141,11 @@ int main(int argc, char **argv){
     cbreak();
     noecho();
     setbuf(stdout, NULL);
-    getmaxyx(stdscr, screen_height, screen_width);
+    getmaxyx(stdscr, canvas.height, canvas.width);
 
     err = init_color_palette(
             custom_colors, num_custom_colors,
-            &palette, backup_ptr);
+            &canvas.palette, (backup_colors ? &canvas.backup : NULL));
     if(err)
         goto cleanup;
 
@@ -158,12 +156,11 @@ int main(int argc, char **argv){
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
     for(unsigned int i=0; i<num_pipes;i++) {
-        init_pipe(&pipes[i], &palette, initial_state,
-            screen_width, screen_height);
-        random_pipe_color(&pipes[i], &palette);
+        init_pipe(&pipes[i], &canvas, initial_state);
+        random_pipe_color(&pipes[i], &canvas.palette);
     }
 
-    animate(fps, render, &screen_width, &screen_height, &interrupted, NULL);
+    animate(fps, render, &canvas, &interrupted, NULL);
 
 cleanup:
     curs_set(1);
@@ -172,22 +169,22 @@ cleanup:
     if(err)
         print_error();
 
-    if(backup_ptr) {
-        restore_colors(backup_ptr);
-        free_colors(backup_ptr);
+    if(backup_colors) {
+        restore_colors(&canvas.backup);
+        free_colors(&canvas.backup);
     }
 
     free(custom_colors);
     free(pipes);
-    palette_destroy(&palette);
+    palette_destroy(&canvas.palette);
     return 0;
 }
 
-void render(unsigned int width, unsigned int height, void *data){
+void render(struct canvas *c, void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i]);
-        if(wrap_pipe(&pipes[i], width, height))
-            random_pipe_color(&pipes[i], &palette);
+        if(wrap_pipe(&pipes[i], c))
+            random_pipe_color(&pipes[i], &c->palette);
 
         char old_state = pipes[i].state;
         if(should_flip_state(&pipes[i], min_len, prob)){
@@ -242,6 +239,7 @@ void find_num_colors(int argc, char **argv) {
     if(num_custom_colors > 0) {
         custom_colors = malloc(sizeof(*custom_colors) * num_custom_colors);
         if(!custom_colors) {
+            // TODO: Use err.c to handle this
             perror("Error allocating memory for color palette.");
             exit(1);
         }
@@ -294,7 +292,7 @@ void parse_options(int argc, char **argv){
                 }
                 break;
             case 'b':
-                backup_ptr = &backup;
+                backup_colors = true;
                 break;
             case 'c':
                 if(sscanf(optarg, "%" SCNx32, &color) != 1) {

@@ -310,8 +310,7 @@ int set_color_pair_direct(int color_index, uint32_t color) {
     return set_pair(color_index, color, COLOR_BLACK);
 }
 
-void animate(int fps, anim_function renderer,
-        unsigned int *width, unsigned int *height,
+void animate(int fps, anim_function renderer, struct canvas *canvas,
         volatile sig_atomic_t *interrupted, void *data){
     //Store start time
     struct timespec start_time;
@@ -323,7 +322,7 @@ void animate(int fps, anim_function renderer,
 
         // If we received a SIGWINCH, update width and height
         if(key == KEY_RESIZE) {
-            getmaxyx(stdscr, *height, *width);
+            getmaxyx(stdscr, canvas->height, canvas->width);
         }else if(key != ERR) {
             // Any actual keypresses should quit the program.
             break;
@@ -332,7 +331,7 @@ void animate(int fps, anim_function renderer,
         clock_gettime(CLOCK_REALTIME, &start_time);
 
         //Render
-        (*renderer)(*width, *height, data);
+        (*renderer)(canvas, data);
 
         //Get end time
         struct timespec end_time;

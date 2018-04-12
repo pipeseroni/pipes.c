@@ -7,7 +7,8 @@ cpipes_SOURCES = src/cpipes.c \
 				src/pipe.c src/pipe.h \
 				src/render.c src/render.h \
 				src/util.c src/util.h \
-				src/err.c src/err.h
+				src/err.c src/err.h \
+				src/canvas.h
 cpipes_CFLAGS = $(WARN_CFLAGS)
 cpipes_LDFLAGS = $(WARN_LDFLAGS)
 cpipes_LDADD = $(CURSES_LIBS)

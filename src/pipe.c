@@ -312,21 +312,20 @@ cpipes_errno multicolumn_adjust(char **continuation) {
  * function makes sure to only assign initial positions at full-character
  * boundaries.
  */
-void init_pipe(struct pipe *pipe, struct palette *palette,
-        int initial_state,
-        unsigned int width, unsigned int height){
+void init_pipe(struct pipe *pipe, struct canvas *canvas, int initial_state) {
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
-    width -= width % colwidth;
+    unsigned int width = canvas->width;
+    width -= canvas->width % colwidth;
 
     if(initial_state < 0)
         pipe->state = randrange(0, 4);
     else
         pipe->state = initial_state;
-    random_pipe_color(pipe, palette);
+    random_pipe_color(pipe, &canvas->palette);
     pipe->length = 0;
     pipe->x = randrange(0, width / colwidth) * colwidth;
-    pipe->y = randrange(0, height / colwidth) * colwidth;
+    pipe->y = randrange(0, canvas->height / colwidth) * colwidth;
 }
 
 /** Move a pipe by the amount given by the current state. If
@@ -344,16 +343,21 @@ void move_pipe(struct pipe *pipe){
  * characters, wrap the pipe before it gets a chance to spit out incomplete
  * characters.
  */
-bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
+bool wrap_pipe(struct pipe *pipe, struct canvas *canvas){
     // Take multi-column chars into account
+    unsigned int width = canvas->width;
     width -= width % max(states[0][1], -states[2][0]);
 
     if(pipe->x < 0 || (unsigned int) pipe->x >= width
-            || pipe->y < 0 || (unsigned int) pipe->y >= height){
-        if(pipe->x < 0){ pipe->x += width; }
-        if(pipe->y < 0){ pipe->y += height; }
-        if((unsigned int) pipe->x >= width) {pipe->x -= width; }
-        if((unsigned int) pipe->y >= height) {pipe->y -= height; }
+            || pipe->y < 0 || (unsigned int) pipe->y >= canvas->height){
+        if(pipe->x < 0)
+            pipe->x += width;
+        if(pipe->y < 0)
+            pipe->y += canvas->height;
+        if((unsigned int) pipe->x >= canvas->width)
+            pipe->x -= width;
+        if((unsigned int) pipe->y >= canvas->height)
+            pipe->y -= canvas->height;
         return true;
     }
     return false;
