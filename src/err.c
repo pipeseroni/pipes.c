@@ -1,3 +1,6 @@
+#include <config.h>
+
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,13 +50,20 @@ static void err_provenance(const char *file, int line, const char *function) {
 /** Store message in buffer. */
 void set_error_(const char *file, int line, const char *function,
         cpipes_errno err_num, ...) {
+    assert(ERR_ICONV_ERROR <= err_num && err_num <= ERR_CURSES_ERR
+            /* Error number is within the correct range */);
+
     err_provenance(file, line, function);
 
     va_list extra_args;
     va_start(extra_args, err_num);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
     ERR_OFFSET += vsnprintf(
             ERR_BUF + ERR_OFFSET, ERR_BUF_SZ - ERR_OFFSET,
             PIPES_C_ERROR_STRINGS[-err_num], extra_args);
+#pragma GCC diagnostic pop
     va_end(extra_args);
 
     // Always terminate with a nul, even if snprintf didn't allow anything to
@@ -61,6 +71,9 @@ void set_error_(const char *file, int line, const char *function,
     ERR_BUF[ERR_BUF_SZ - 1] = '\0';
 }
 
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
+__attribute__((__format__ (__printf__, 4, 5)))
+#endif
 void add_error_info_(const char *file, int line, const char *function,
         const char *fmt, ...) {
     ERR_OFFSET += snprintf(

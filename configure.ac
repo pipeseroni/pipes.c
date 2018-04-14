@@ -73,6 +73,9 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [],
 AC_SEARCH_LIBS([fmod], [m], [],
                [AC_MSG_ERROR(["fmod is required"])])
 
+# Check for format attribute
+AX_GCC_FUNC_ATTRIBUTE([format])
+
 # Use noreturn attribute if available
 AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
 
