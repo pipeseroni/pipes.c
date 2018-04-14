@@ -40,7 +40,7 @@ char *continuation[2];
 int main(int argc, char **argv) {
     int r;
 
-    size_t bufsz = 10;
+    size_t bufsz = 20;
     char in[bufsz];
     char out[bufsz];
 
