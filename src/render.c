@@ -59,12 +59,16 @@ int hsl2rgb(float hue, float sat, float light) {
 // Check whether this terminal has the RGB capability (direct colors).
 // This is adapted from `parse_rgb.h` header with the ncurses test programs.
 bool have_direct_colors(void) {
-    if (tigetflag("RGB") > 0) {
+    // Required because terminfo on mac requires a non-const name
+    char rgbcap[4];
+    strcpy(rgbcap, "RGB");
+
+    if (tigetflag(rgbcap) > 0) {
         return true;
-    } else if (tigetnum("RGB") > 0) {
+    } else if (tigetnum(rgbcap) > 0) {
         return true;
     } else {
-        char *strval = tigetstr("RGB");
+        char *strval = tigetstr(rgbcap);
         if(strval != (char *) -1 && strval)
             return true;
     }
