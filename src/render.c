@@ -32,9 +32,9 @@ static cpipes_errno query_terminal(const char *escape, char *buffer, int bufsz);
 
 // Cribbed straight from Wikipedia :)
 int hsl2rgb(float hue, float sat, float light) {
-    float chroma = (1.0f - fabsf(2*light - 1)) * sat;
+    float chroma = (1.0f - fabsf(2.0f*light - 1)) * sat;
     float hue_segment = hue / 60;
-    float cpt2 = chroma * (1 - fabsf(fmod(hue_segment, 2) - 1));
+    float cpt2 = chroma * (1 - fabsf(fmodf(hue_segment, 2.0f) - 1));
     float r, g, b;
     switch((int)hue_segment){
         case 0: r = chroma; g = cpt2  ; b = 0     ; break;
