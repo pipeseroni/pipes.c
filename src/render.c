@@ -84,7 +84,7 @@ size_t palette_size(void) {
     // 8 colors.
     int max_pipe_colors = min(COLORS, COLOR_PAIRS);
 
-#if !HAVE_ALLOC_PAIR
+#if !defined HAVE_ALLOC_PAIR
     // On systems that do not support alloc_pair, the max. number of pairs
     // that can actually be used is 32767, because that is the limit of
     // the positive numbers in a 16-bit unsigned short. Apparently this
@@ -92,7 +92,7 @@ size_t palette_size(void) {
     max_pipe_colors = min(max_pipe_colors, 32767);
 #endif
 
-#if !HAVE_EXTENDED_COLOR
+#if !defined HAVE_EXTENDED_COLOR
     // Similarly, if we cannot call `init_extended_color`, then we cannot
     // set more than 32767 colors, no matter how many pairs we have.
     max_pipe_colors = min(max_pipe_colors, 32767);
@@ -255,10 +255,10 @@ void palette_destroy(struct palette *palette) {
 int set_pair(int pair_index, int fg, int bg) {
     int retval;
     int alloced_index = pair_index;
-#if HAVE_ALLOC_PAIR
+#if defined HAVE_ALLOC_PAIR
     retval = alloc_pair(fg, bg);
     alloced_index = retval;
-#elif HAVE_EXTENDED_COLOR
+#elif defined HAVE_EXTENDED_COLOR
     retval = init_extended_pair(pair_index, fg, bg);
 #else
     retval = init_pair(pair_index, fg, bg);
@@ -285,7 +285,7 @@ int set_color_pair_indirect(int color_index, uint32_t color) {
     int b = ((color      ) & 0xFF) * 1000 / 255;
 
     int retval;
-#if HAVE_EXTENDED_COLOR
+#if defined HAVE_EXTENDED_COLOR
     retval = init_extended_color(color_index, r, g, b);
 #else
     retval = init_color(color_index, r, g, b);
