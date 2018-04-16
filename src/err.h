@@ -27,7 +27,7 @@ typedef enum PIPES_C_ERRORS cpipes_errno;
         __VA_ARGS__)
 
 /** Called by set_error macro with __FILE__, __LINE__ and __func__ */
-void set_error_(const char *file, int line, const char *function,
+cpipes_errno set_error_(const char *file, int line, const char *function,
         cpipes_errno err_num, ...);
 void add_error_info_(const char *file, int line, const char *function,
         const char *fmt, ...);
