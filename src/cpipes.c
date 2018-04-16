@@ -1,7 +1,9 @@
 #include <config.h>
 
+#include <inttypes.h>
 #include <langinfo.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -14,6 +16,7 @@
 
 #include "pipe.h"
 #include "render.h"
+#include "util.h"
 
 // Use noreturn on die() if possible
 #ifdef HAVE_STDNORETURN_H
@@ -24,6 +27,7 @@
 
 void interrupt_signal(int param);
 void parse_options(int argc, char **argv);
+static void find_num_colors(int argc, char **argv);
 float parse_float_opt(const char *optname);
 int parse_int_opt(const char *optname);
 noreturn void die(void);
@@ -43,6 +47,8 @@ const char *usage =
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
+    "    -c, --color=C   Add color C (in RRGGBB hexadecimal) to palette.\n"
+    "    --backup-colors Backup colors and restore when exiting.\n"
     "    -h, --help      This help message.\n";
 
 static struct option opts[] = {
@@ -52,6 +58,8 @@ static struct option opts[] = {
     {"length",  required_argument, 0,   'l'},
     {"prob",    required_argument, 0,   'r'},
     {"help",    no_argument,       0,   'h'},
+    {"color",   required_argument, 0,   'c'},
+    {"backup-colors", no_argument, 0,   'b'},
     {0,         0,                 0,    0 }
 };
 
@@ -83,6 +91,16 @@ const char *selected_chars = NULL;
 
 char pipe_char_buf[CHAR_BUF_SZ];
 
+// Colour information stored here.
+struct palette palette;
+// Colours set by parse_options by the "-c" flag
+uint32_t *custom_colors = NULL;
+size_t num_custom_colors = 0;
+
+// Keep a separate pointer because this is optional.
+struct color_backup backup;
+struct color_backup *backup_ptr = NULL;
+
 // Convenience macro for bailing in init_chars
 #define X(a) do { \
         if( ((a)) == -1 ) { \
@@ -104,12 +122,13 @@ int init_chars(void) {
 
     X(locale_to_utf8(inbuf, utf8buf, source_charset, CHAR_BUF_SZ));
     X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset));
-    X(assign_matrices(pipe_char_buf, trans, pipe_chars));
+    assign_matrices(pipe_char_buf, trans, pipe_chars);
     X(multicolumn_adjust(pipe_chars));
     return 0;
 }
 
 int main(int argc, char **argv){
+    cpipes_errno err = 0;
     srand(time(NULL));
     setlocale(LC_ALL, "");
     //Set a flag upon interrupt to allow proper cleaning
@@ -122,21 +141,45 @@ int main(int argc, char **argv){
     initscr();
     curs_set(0);
     cbreak();
-    nodelay(stdscr, true);
+    noecho();
+    setbuf(stdout, NULL);
     getmaxyx(stdscr, screen_height, screen_width);
-    init_colours();
+
+    err = init_color_palette(
+            custom_colors, num_custom_colors,
+            &palette, backup_ptr);
+    if(err)
+        goto cleanup;
+
+    // Called after init_color_palette because that needs to have a
+    // timeout on getch() to determine whether the query worked.
+    nodelay(stdscr, true);
 
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
-    for(unsigned int i=0; i<num_pipes;i++)
-        init_pipe(&pipes[i], COLORS, initial_state,
+    for(unsigned int i=0; i<num_pipes;i++) {
+        init_pipe(&pipes[i], &palette, initial_state,
             screen_width, screen_height);
+        random_pipe_color(&pipes[i], &palette);
+    }
 
     animate(fps, render, &screen_width, &screen_height, &interrupted, NULL);
 
+cleanup:
     curs_set(1);
     endwin();
+
+    if(err)
+        print_error();
+
+    if(backup_ptr) {
+        restore_colors(backup_ptr);
+        free_colors(backup_ptr);
+    }
+
+    free(custom_colors);
     free(pipes);
+    palette_destroy(&palette);
     return 0;
 }
 
@@ -144,7 +187,7 @@ void render(unsigned int width, unsigned int height, void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i]);
         if(wrap_pipe(&pipes[i], width, height))
-            random_pipe_colour(&pipes[i], COLORS);
+            random_pipe_color(&pipes[i], &palette);
 
         char old_state = pipes[i].state;
         if(should_flip_state(&pipes[i], min_len, prob)){
@@ -188,9 +231,36 @@ float parse_float_opt(const char *optname){
     return f_res;
 }
 
-void parse_options(int argc, char **argv){
+void find_num_colors(int argc, char **argv) {
+    opterr = 0;
+    // First work out how many colors were specified on the command line
     int c;
-    while((c = getopt_long(argc, argv, "p:f:al:r:i:h", opts, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "c:", opts, NULL)) != -1) {
+        if(c == 'c')
+            num_custom_colors++;
+    }
+    if(num_custom_colors > 0) {
+        custom_colors = malloc(sizeof(*custom_colors) * num_custom_colors);
+        if(!custom_colors) {
+            perror("Error allocating memory for color palette.");
+            exit(1);
+        }
+    }
+    // Reset optind so we can do the proper parsing run
+    optind = 0;
+}
+
+void parse_options(int argc, char **argv){
+    opterr = 1;
+    int c;
+
+    find_num_colors(argc, argv);
+    // Current color (`-c`) and index into `custom_colors`
+    size_t color_index = 0;
+    uint32_t color = 0;
+
+    optind = 0;
+    while((c = getopt_long(argc, argv, "p:f:al:r:i:c:h", opts, NULL)) != -1){
         switch(c){
             errno = 0;
             case 'p':
@@ -222,6 +292,16 @@ void parse_options(int argc, char **argv){
                     usage_msg(1);
                     exit(1);
                 }
+                break;
+            case 'b':
+                backup_ptr = &backup;
+                break;
+            case 'c':
+                if(sscanf(optarg, "%" SCNx32, &color) != 1) {
+                    fprintf(stderr, "Invalid color '%s'\n", optarg);
+                    die();
+                }
+                custom_colors[color_index++] = color;
                 break;
             case 'h':
                 usage_msg(0);
