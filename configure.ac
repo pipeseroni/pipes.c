@@ -9,6 +9,8 @@ AC_INIT([pipes.c],
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/cpipes.c])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_PROG_AR
+AC_PROG_RANLIB
 AC_PROG_SED
 AC_LANG([C])
 AC_PROG_CC_C99

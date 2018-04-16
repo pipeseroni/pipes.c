@@ -13,13 +13,16 @@ cpipes_LDFLAGS = $(WARN_LDFLAGS)
 cpipes_LDADD = $(CURSES_LIBS)
 cpipes_CPPFLAGS = $(CURSES_CFLAGS)
 
+noinst_LIBRARIES = libtap.a
+libtap_a_SOURCES = tap/tap.c tap/tap.h
+
 test_locale_SOURCES = t/locale.c \
 					  src/pipe.c src/pipe.h \
 					  src/util.c src/util.h \
 					  src/err.c src/err.h
-test_locale_CFLAGS = -I$(srcdir)/src $(WARN_CFLAGS)
+test_locale_CFLAGS = -I$(srcdir)/src -isystem tap $(WARN_CFLAGS)
 test_locale_LDFLAGS = $(WARN_LDFLAGS)
-test_locale_LDADD = $(CURSES_LIBS)
+test_locale_LDADD = $(CURSES_LIBS) libtap.a
 test_locale_CPPFLAGS = $(CURSES_CFLAGS)
 
 EXTRA_DIST = LICENSE README.md

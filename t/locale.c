@@ -4,23 +4,14 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <tap.h>
+
 #include "pipe.h"
 #include "err.h"
 /**
  * Check locale-encoding functions.
  */
 #define NUM_TESTS 30
-
-// TAP-producing ok() function
-static int testnum = 1;
-static int failures = 0;
-
-static void ok(bool condition, const char* msg);
-static void ok(bool condition, const char* msg) {
-    printf("%s %d - %s\n", condition ? "ok" : "not ok", testnum++, msg);
-    if(!condition)
-        failures++;
-}
 
 // These are the same in UTF8 and GB18030
 const char *UTF8_ASCII = "123";
@@ -44,24 +35,23 @@ int main(int argc, char **argv) {
     char in[bufsz];
     char out[bufsz];
 
-    printf("1..%d\n", NUM_TESTS);
+    plan(NUM_TESTS);
 
     // Identity conversion with ASCII bytes
     strcpy(in, UTF8_ASCII);
     r = locale_to_utf8(in, out, "UTF-8", 4);
     ok(r == 0,
         "ASCII UTF8 to UTF8 in 4 bytes: no error code.");
-    ok(strcmp(out, UTF8_ASCII) == 0,
-        "ASCII UTF8 to UTF8 copied correctly");
+    is(out, UTF8_ASCII, "ASCII UTF8 to UTF8 copied correctly");
     clear_error();
 
     r = locale_to_utf8(in, out, "UTF-8", 3);
     ok(r == ERR_BUFFER_TOO_SMALL,
         "ASCII UTF8 to UTF8 in 3 bytes: buffer too small.");
 
-    ok(strstr(string_error(), "Buffer (3 items) too small"),
+    like(string_error(), "Buffer \\(3 items\\) too small",
         "Error text contains buffer size.");
-    ok(strstr(string_error(), "tried to insert 4 items"),
+    like(string_error(), "tried to insert 4 items",
         "Error text contains inserted size.");
     clear_error();
 
@@ -70,8 +60,7 @@ int main(int argc, char **argv) {
     r = locale_to_utf8(in, out, "UTF-8", 7);
     ok(r == 0,
         "Box UTF8 to UTF8 in 7 bytes: no error code.");
-    ok(strcmp(out, UTF8_BOX) == 0,
-        "Box UTF8 to UTF8 copied correctly.");
+    is(out, UTF8_BOX, "Box UTF8 to UTF8 copied correctly.");
     clear_error();
 
     r = locale_to_utf8(in, out, "UTF-8", 6);
@@ -84,8 +73,7 @@ int main(int argc, char **argv) {
     r = locale_to_utf8(in, out, "GB18030", 4);
     ok(r == 0,
         "ASCII GB18030 to UTF8 in 4 bytes: no error code.");
-    ok(strcmp(out, UTF8_ASCII) == 0,
-        "ASCII UTF8 to GB18030 copied correctly");
+    is(out, UTF8_ASCII, "ASCII UTF8 to GB18030 copied correctly");
     clear_error();
 
     r = locale_to_utf8(in, out, "GB18030", 3);
@@ -98,8 +86,7 @@ int main(int argc, char **argv) {
     r = locale_to_utf8(in, out, "GB18030", 7);
     ok(r == 0,
         "Box GB18030 to UTF8 in 7 bytes: no error code.");
-    ok(strcmp(out, UTF8_BOX) == 0,
-        "Box GB18030 to UTF8 copied correctly.");
+    is(out, UTF8_BOX, "Box GB18030 to UTF8 copied correctly.");
     clear_error();
 
     r = locale_to_utf8(in, out, "GB18030", 6);
@@ -141,20 +128,21 @@ int main(int argc, char **argv) {
 
     assign_matrices(in, transition, continuation);
 
-    ok(!strcmp(continuation[0], "1"), "HORIZONTAL");
-    ok(!strcmp(continuation[1], "2"), "VERTICAL");
+    is(continuation[0], "1", "HORIZONTAL");
+    is(continuation[1], "2", "VERTICAL");
 
-    ok(!strcmp(transition[CPIPES_RIGHT * 4 + CPIPES_DOWN], "3"), "RIGHT / DOWN");
-    ok(!strcmp(transition[CPIPES_UP * 4 + CPIPES_LEFT], "3"), "UP / LEFT");
+    is(transition[CPIPES_RIGHT * 4 + CPIPES_DOWN], "3", "RIGHT / DOWN");
+    is(transition[CPIPES_UP * 4 + CPIPES_LEFT], "3", "UP / LEFT");
 
-    ok(!strcmp(transition[CPIPES_RIGHT * 4 + CPIPES_UP], "4"), "RIGHT / UP");
-    ok(!strcmp(transition[CPIPES_DOWN * 4 + CPIPES_LEFT], "4"), "DOWN / LEFT");
+    is(transition[CPIPES_RIGHT * 4 + CPIPES_UP], "4", "RIGHT / UP");
+    is(transition[CPIPES_DOWN * 4 + CPIPES_LEFT], "4", "DOWN / LEFT");
 
-    ok(!strcmp(transition[CPIPES_LEFT * 4 + CPIPES_UP], "5"), "LEFT / UP");
-    ok(!strcmp(transition[CPIPES_DOWN * 4 + CPIPES_RIGHT], "5"), "DOWN / RIGHT");
+    is(transition[CPIPES_LEFT * 4 + CPIPES_UP], "5", "LEFT / UP");
+    is(transition[CPIPES_DOWN * 4 + CPIPES_RIGHT], "5", "DOWN / RIGHT");
 
-    ok(!strcmp(transition[CPIPES_LEFT * 4 + CPIPES_DOWN], "6"), "LEFT / DOWN");
-    ok(!strcmp(transition[CPIPES_UP * 4 + CPIPES_RIGHT], "6"), "UP / RIGHT");
+    is(transition[CPIPES_LEFT * 4 + CPIPES_DOWN], "6", "LEFT / DOWN");
+    is(transition[CPIPES_UP * 4 + CPIPES_RIGHT], "6", "UP / RIGHT");
     clear_error();
-    return (failures > 0) ? 1 : 0;
+
+    done_testing();
 }
