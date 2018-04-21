@@ -478,7 +478,17 @@ void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state){
 
     move(p->y, p->x);
+
+    // ABI 6 and up can pass the color in the opts pointer as a pointer to an
+    // int. otherwise, we need to use the pair parameter, which is a short.
+    // The overflow should have been taken care of in palette_size, so we
+    // should just need the ABI version check.
+# if NCURSES_VERSION_MAJOR >= 6
     attr_set(A_NORMAL, 1, &p->color);
+#else
+    attr_set(A_NORMAL, p->color, NULL);
+#endif
+
     if(old_state != new_state) {
         addstr(transition_char(trans, old_state, new_state));
     }else{
