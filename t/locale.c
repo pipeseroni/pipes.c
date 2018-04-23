@@ -144,17 +144,17 @@ int main(int argc, char **argv) {
     ok(!strcmp(continuation[0], "1"), "HORIZONTAL");
     ok(!strcmp(continuation[1], "2"), "VERTICAL");
 
-    ok(!strcmp(transition[RIGHT * 4 + DOWN], "3"), "RIGHT / DOWN");
-    ok(!strcmp(transition[UP * 4 + LEFT], "3"), "UP / LEFT");
+    ok(!strcmp(transition[CPIPES_RIGHT * 4 + CPIPES_DOWN], "3"), "RIGHT / DOWN");
+    ok(!strcmp(transition[CPIPES_UP * 4 + CPIPES_LEFT], "3"), "UP / LEFT");
 
-    ok(!strcmp(transition[RIGHT * 4 + UP], "4"), "RIGHT / UP");
-    ok(!strcmp(transition[DOWN * 4 + LEFT], "4"), "DOWN / LEFT");
+    ok(!strcmp(transition[CPIPES_RIGHT * 4 + CPIPES_UP], "4"), "RIGHT / UP");
+    ok(!strcmp(transition[CPIPES_DOWN * 4 + CPIPES_LEFT], "4"), "DOWN / LEFT");
 
-    ok(!strcmp(transition[LEFT * 4 + UP], "5"), "LEFT / UP");
-    ok(!strcmp(transition[DOWN * 4 + RIGHT], "5"), "DOWN / RIGHT");
+    ok(!strcmp(transition[CPIPES_LEFT * 4 + CPIPES_UP], "5"), "LEFT / UP");
+    ok(!strcmp(transition[CPIPES_DOWN * 4 + CPIPES_RIGHT], "5"), "DOWN / RIGHT");
 
-    ok(!strcmp(transition[LEFT * 4 + DOWN], "6"), "LEFT / DOWN");
-    ok(!strcmp(transition[UP * 4 + RIGHT], "6"), "UP / RIGHT");
+    ok(!strcmp(transition[CPIPES_LEFT * 4 + CPIPES_DOWN], "6"), "LEFT / DOWN");
+    ok(!strcmp(transition[CPIPES_UP * 4 + CPIPES_RIGHT], "6"), "UP / RIGHT");
     clear_error();
     return (failures > 0) ? 1 : 0;
 }

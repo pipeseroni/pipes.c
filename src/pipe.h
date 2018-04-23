@@ -26,10 +26,10 @@ struct pipe {
 };
 
 enum DIRECTIONS {
-    RIGHT = 0,
-    DOWN = 1,
-    LEFT = 2,
-    UP = 3
+    CPIPES_RIGHT = 0,
+    CPIPES_DOWN = 1,
+    CPIPES_LEFT = 2,
+    CPIPES_UP = 3
 };
 struct palette;
 
