@@ -1,7 +1,7 @@
 bin_PROGRAMS = cpipes
 
-check_PROGRAMS = test_locale test_pipe_cell_list
-TESTS = test_locale test_pipe_cell_list
+check_PROGRAMS = test_locale test_pipe_cell_list test_canvas
+TESTS = test_locale test_pipe_cell_list test_canvas
 
 cpipes_SOURCES = src/cpipes.c \
 				src/pipe.c src/pipe.h \
@@ -35,5 +35,15 @@ test_pipe_cell_list_CFLAGS = -I$(srcdir)/src -isystem tap $(WARN_CFLAGS)
 test_pipe_cell_list_LDFLAGS = $(WARN_LDFLAGS)
 test_pipe_cell_list_LDADD = $(CURSES_LIBS) libtap.a
 test_pipe_cell_list_CPPFLAGS = $(CURSES_CFLAGS)
+
+test_canvas_SOURCES = t/canvas.c \
+					  src/pipe.c src/pipe.h \
+					  src/util.c src/util.h \
+					  src/err.c src/err.h \
+					  src/canvas.c src/canvas.h
+test_canvas_CFLAGS = -I$(srcdir)/src -isystem tap $(WARN_CFLAGS)
+test_canvas_LDFLAGS = $(WARN_LDFLAGS)
+test_canvas_LDADD = $(CURSES_LIBS) libtap.a
+test_canvas_CPPFLAGS = $(CURSES_CFLAGS)
 
 EXTRA_DIST = LICENSE README.md
