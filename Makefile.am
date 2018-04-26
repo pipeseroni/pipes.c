@@ -8,7 +8,7 @@ cpipes_SOURCES = src/cpipes.c \
 				src/render.c src/render.h \
 				src/util.c src/util.h \
 				src/err.c src/err.h \
-				src/canvas.h
+				src/canvas.h src/canvas.c
 cpipes_CFLAGS = $(WARN_CFLAGS)
 cpipes_LDFLAGS = $(WARN_LDFLAGS)
 cpipes_LDADD = $(CURSES_LIBS)
@@ -20,7 +20,8 @@ libtap_a_SOURCES = tap/tap.c tap/tap.h
 test_locale_SOURCES = t/locale.c \
 					  src/pipe.c src/pipe.h \
 					  src/util.c src/util.h \
-					  src/err.c src/err.h
+					  src/err.c src/err.h \
+					  src/canvas.c src/canvas.h
 test_locale_CFLAGS = -I$(srcdir)/src -isystem tap $(WARN_CFLAGS)
 test_locale_LDFLAGS = $(WARN_LDFLAGS)
 test_locale_LDADD = $(CURSES_LIBS) libtap.a

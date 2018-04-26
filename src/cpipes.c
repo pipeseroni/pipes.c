@@ -52,6 +52,7 @@ const char *usage =
     "    -f, --fps=F     Frames per second.                (Default: 60.0  )\n"
     "    -a, --ascii     ASCII mode.                       (Default: no    )\n"
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
+    "    -m, --max=N     Minimum length of pipe.           (Default: None  )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
     "    -c, --color=C   Add color C (in RRGGBB hexadecimal) to palette.\n"
@@ -63,6 +64,7 @@ static struct option opts[] = {
     {"fps",     required_argument, 0,   'f'},
     {"ascii",   no_argument,       0,   'a'},
     {"length",  required_argument, 0,   'l'},
+    {"max",     required_argument, 0,   'm'},
     {"prob",    required_argument, 0,   'r'},
     {"help",    no_argument,       0,   'h'},
     {"color",   required_argument, 0,   'c'},
@@ -81,6 +83,7 @@ unsigned int num_pipes = 20;
 float fps = 60;
 float prob = 0.1;
 unsigned int min_len = 2;
+unsigned int max_len = 0;
 
 char *trans[16];
 char *pipe_chars[2];
@@ -142,6 +145,7 @@ int main(int argc, char **argv){
     noecho();
     setbuf(stdout, NULL);
     getmaxyx(stdscr, canvas.height, canvas.width);
+    canvas_init(&canvas, canvas.width, canvas.height);
 
     err = init_color_palette(
             custom_colors, num_custom_colors,
@@ -156,7 +160,11 @@ int main(int argc, char **argv){
     //Init pipes. Use predetermined initial state, if any.
     pipes = malloc(num_pipes * sizeof(struct pipe));
     for(unsigned int i=0; i<num_pipes;i++) {
-        init_pipe(&pipes[i], &canvas, initial_state);
+        err = init_pipe(&pipes[i], &canvas, initial_state, max_len);
+        if(err) {
+            add_error_info("Error initialising pipe %u", i);
+            goto cleanup;
+        }
         random_pipe_color(&pipes[i], &canvas.palette);
     }
 
@@ -174,6 +182,7 @@ cleanup:
         free_colors(&canvas.backup);
     }
 
+    canvas_free(&canvas);
     free(custom_colors);
     free(pipes);
     palette_destroy(&canvas.palette);
@@ -182,7 +191,8 @@ cleanup:
 
 void render(struct canvas *c, void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
-        move_pipe(&pipes[i]);
+        move_pipe(&pipes[i], c);
+
         if(wrap_pipe(&pipes[i], c))
             random_pipe_color(&pipes[i], &c->palette);
 
@@ -190,7 +200,21 @@ void render(struct canvas *c, void *data){
         if(should_flip_state(&pipes[i], min_len, prob)){
             old_state = flip_pipe_state(&pipes[i]);
         }
+
+        const char *pipe_char;
+        if(old_state != pipes[i].state)
+            pipe_char = transition_char(trans, old_state, pipes[i].state);
+        else
+            pipe_char = pipe_chars[old_state % 2];
+
         render_pipe(&pipes[i], trans, pipe_chars, old_state, pipes[i].state);
+        if(pipes[i].locations) {
+            size_t cell_idx = pipes[i].y * c->width + pipes[i].x;
+            if(pipes[i].locations->size == max_len)
+                erase_pipe_tail(&pipes[i], c);
+            location_buffer_push(pipes[i].locations, cell_idx);
+            pipe_cell_list_push(&c->cells[cell_idx], pipe_char, &pipes[i]);
+        }
     }
     refresh();
 }
@@ -258,7 +282,7 @@ void parse_options(int argc, char **argv){
     uint32_t color = 0;
 
     optind = 0;
-    while((c = getopt_long(argc, argv, "p:f:al:r:i:c:h", opts, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "p:f:al:m:r:i:c:h", opts, NULL)) != -1){
         switch(c){
             errno = 0;
             case 'p':
@@ -272,6 +296,9 @@ void parse_options(int argc, char **argv){
                 break;
             case 'l':
                 min_len = parse_int_opt("--length");
+                break;
+            case 'm':
+                max_len = parse_int_opt("--max");
                 break;
             case 'r':
                 prob = parse_float_opt("--prob");

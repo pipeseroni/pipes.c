@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <wchar.h>
+#include "canvas.h"
 #include "err.h"
 #include "pipe.h"
 #include "util.h"
@@ -312,7 +313,8 @@ cpipes_errno multicolumn_adjust(char **continuation) {
  * function makes sure to only assign initial positions at full-character
  * boundaries.
  */
-void init_pipe(struct pipe *pipe, struct canvas *canvas, int initial_state) {
+cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
+        int initial_state, unsigned int max_len) {
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
     unsigned int width = canvas->width;
@@ -326,6 +328,19 @@ void init_pipe(struct pipe *pipe, struct canvas *canvas, int initial_state) {
     pipe->length = 0;
     pipe->x = randrange(0, width / colwidth) * colwidth;
     pipe->y = randrange(0, canvas->height / colwidth) * colwidth;
+
+    // Initialise location buffer, or set it to NULL if max_len is 0
+    if(max_len) {
+        pipe->locations = malloc(sizeof(*pipe->locations));
+        if(!pipe->locations)
+            return set_error(ERR_OUT_OF_MEMORY);
+        cpipes_errno err = location_buffer_init(pipe->locations, max_len);
+        if(err)
+            return err;
+    } else {
+        pipe->locations = NULL;
+    }
+    return 0;
 }
 
 /** Move a pipe by the amount given by the current state. If
@@ -333,10 +348,17 @@ void init_pipe(struct pipe *pipe, struct canvas *canvas, int initial_state) {
  * in use, the `states` variable will have been updated to reflect the width of
  * the largest character in use.
  */
-void move_pipe(struct pipe *pipe){
+void move_pipe(struct pipe *pipe, struct canvas *canvas){
     pipe->x += states[pipe->state][0];
     pipe->y += states[pipe->state][1];
     pipe->length++;
+}
+
+/** If a pipe has a maximum length, erase the tail of the pipe. */
+void erase_pipe_tail(struct pipe *pipe, struct canvas *canvas) {
+    unsigned int *tail = location_buffer_tail(pipe->locations);
+    if(tail)
+        canvas_erase_tail(canvas, *tail, pipe);
 }
 
 /** Wrap a pipe at terminal boundaries.  If there are multi-column continuation

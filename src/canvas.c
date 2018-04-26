@@ -1,5 +1,6 @@
 #include <config.h>
 
+#include <curses.h>
 #include <stdlib.h>
 #include "pipe.h"
 #include "canvas.h"
@@ -108,6 +109,32 @@ void canvas_free(struct canvas *canvas) {
     for(size_t i = 0; i < canvas->width * canvas->height; i++)
         pipe_cell_list_free(&canvas->cells[i]);
     free(canvas->cells);
+}
+
+/** Erase the tail of a pipe. We do this by removing the lowest pipe in the "tail" cell.
+ * If this changes the "head" of the cell list, we write the new head to that cell.
+ * If the cell is left empty, we clear it.
+ */
+void canvas_erase_tail(struct canvas *c,
+        unsigned int tail, struct pipe *p) {
+    struct pipe_cell_list *cells = &c->cells[tail];
+    struct pipe_cell *head = cells->head;
+
+    unsigned int y = tail / c->width;
+    unsigned int x = tail % c->width;
+    pipe_cell_list_remove(cells, p);
+    if(!cells->head) {
+        mvaddstr(y, x, " ");
+    }else if(head != cells->head) {
+        move(y, x);
+# if NCURSES_VERSION_MAJOR < 6
+        attr_set(A_NORMAL, 1, &c->palette.colors[head->color]);
+#else
+        attr_set(A_NORMAL, c->palette.colors[head->color], NULL);
+#endif
+        addstr(head->pipe_char);
+        attr_off(A_NORMAL, NULL);
+    }
 }
 
 cpipes_errno location_buffer_init(struct location_buffer *buffer, size_t max) {

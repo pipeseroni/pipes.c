@@ -50,6 +50,8 @@ cpipes_errno canvas_resize(
         struct canvas *canvas,
         unsigned int width, unsigned int height);
 void canvas_free(struct canvas *canvas);
+void canvas_erase_tail(struct canvas *c,
+        unsigned int tail, struct pipe *p);
 
 // Circular buffer containing the locations of a pipe
 struct location_buffer {
