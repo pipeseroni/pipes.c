@@ -2,6 +2,7 @@
 
 #include <pipe.h>
 #include <canvas.h>
+#include <pipe_cell_list.h>
 
 #define BUF_SZ 3
 

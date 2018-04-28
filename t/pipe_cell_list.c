@@ -6,7 +6,7 @@
 #include <tap.h>
 
 #include <pipe.h>
-#include <canvas.h>
+#include <pipe_cell_list.h>
 
 struct pipe pipes[3] = {
     {1, 1, 1, 1, 1},

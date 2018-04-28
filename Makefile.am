@@ -7,6 +7,7 @@ SOURCES = src/pipe.c src/pipe.h \
 		  src/render.c src/render.h \
 		  src/util.c src/util.h \
 		  src/err.c src/err.h \
+		  src/pipe_cell_list.c src/pipe_cell_list.h \
 		  src/canvas.h src/canvas.c
 
 cpipes_SOURCES = src/cpipes.c $(SOURCES)
