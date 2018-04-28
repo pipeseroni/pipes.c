@@ -13,6 +13,7 @@
 #include "pipe.h"
 #include "util.h"
 #include "render.h"
+#include "location_buffer.h"
 
 /* This file contains functions for managing the initialisation and movement of
  * a pipe.

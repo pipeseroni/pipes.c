@@ -17,6 +17,7 @@
 #include "canvas.h"
 #include "pipe.h"
 #include "pipe_cell_list.h"
+#include "location_buffer.h"
 #include "render.h"
 #include "util.h"
 

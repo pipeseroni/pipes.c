@@ -1,6 +1,6 @@
 #include <tap.h>
 
-#include <canvas.h>
+#include <location_buffer.h>
 
 #define BUF_SZ 3
 
