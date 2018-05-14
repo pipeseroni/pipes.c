@@ -5,26 +5,16 @@
 #include <stdint.h>
 #include "pipe.h"
 #include "err.h"
+#include "canvas.h"
 
-struct palette {
-    uint32_t *colors;
-    size_t num_colors;
-};
-
-struct color_backup {
-    size_t num_colors;
-    char **escape_codes;
-};
-
-typedef void (*anim_function)(unsigned int width, unsigned int height,
-        void *data);
+typedef void (*anim_function)(struct canvas *canvas, void *data);
 
 cpipes_errno init_color_palette(uint32_t *colors, size_t num_colors,
         struct palette *palette, struct color_backup *backup);
 
 void init_colors(void);
 void animate(int fps, anim_function renderer,
-        unsigned int *width, unsigned int *height,
+        struct canvas *canvas,
         volatile sig_atomic_t *interrupted, void *data);
 void render_pipe(struct pipe *p, char **trans, char **pipe_chars,
         int old_state, int new_state);

@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include "err.h"
 
+struct canvas;
+
 //States and transition characters
 extern char states[][2];
 
@@ -23,6 +25,7 @@ struct pipe {
     unsigned int color;
     unsigned short length;
     int x, y;
+    struct location_buffer *locations;
 };
 
 enum DIRECTIONS {
@@ -33,11 +36,11 @@ enum DIRECTIONS {
 };
 struct palette;
 
-void init_pipe(struct pipe *pipe, struct palette *palette,
-        int initial_state,
-        unsigned int width, unsigned int height);
-void move_pipe(struct pipe *pipe);
-bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height);
+cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
+        int initial_state, unsigned int max_len);
+void move_pipe(struct pipe *pipe, struct canvas *canvas);
+bool wrap_pipe(struct pipe *pipe, struct canvas *canvas);
+void erase_pipe_tail(struct pipe *pipe, struct canvas *canvas);
 char flip_pipe_state(struct pipe *pipe);
 void random_pipe_color(struct pipe *pipe, struct palette *palette);
 bool should_flip_state(struct pipe *p, int min_len, float prob);

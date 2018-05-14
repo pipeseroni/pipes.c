@@ -8,10 +8,12 @@
 #include <stdbool.h>
 #include <string.h>
 #include <wchar.h>
+#include "canvas.h"
 #include "err.h"
 #include "pipe.h"
 #include "util.h"
 #include "render.h"
+#include "location_buffer.h"
 
 /* This file contains functions for managing the initialisation and movement of
  * a pipe.
@@ -312,21 +314,34 @@ cpipes_errno multicolumn_adjust(char **continuation) {
  * function makes sure to only assign initial positions at full-character
  * boundaries.
  */
-void init_pipe(struct pipe *pipe, struct palette *palette,
-        int initial_state,
-        unsigned int width, unsigned int height){
+cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
+        int initial_state, unsigned int max_len) {
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
-    width -= width % colwidth;
+    unsigned int width = canvas->width;
+    width -= canvas->width % colwidth;
 
     if(initial_state < 0)
         pipe->state = randrange(0, 4);
     else
         pipe->state = initial_state;
-    random_pipe_color(pipe, palette);
+    random_pipe_color(pipe, &canvas->palette);
     pipe->length = 0;
     pipe->x = randrange(0, width / colwidth) * colwidth;
-    pipe->y = randrange(0, height / colwidth) * colwidth;
+    pipe->y = randrange(0, canvas->height / colwidth) * colwidth;
+
+    // Initialise location buffer, or set it to NULL if max_len is 0
+    if(max_len) {
+        pipe->locations = malloc(sizeof(*pipe->locations));
+        if(!pipe->locations)
+            return set_error(ERR_OUT_OF_MEMORY);
+        cpipes_errno err = location_buffer_init(pipe->locations, max_len);
+        if(err)
+            return err;
+    } else {
+        pipe->locations = NULL;
+    }
+    return 0;
 }
 
 /** Move a pipe by the amount given by the current state. If
@@ -334,26 +349,38 @@ void init_pipe(struct pipe *pipe, struct palette *palette,
  * in use, the `states` variable will have been updated to reflect the width of
  * the largest character in use.
  */
-void move_pipe(struct pipe *pipe){
+void move_pipe(struct pipe *pipe, struct canvas *canvas){
     pipe->x += states[pipe->state][0];
     pipe->y += states[pipe->state][1];
     pipe->length++;
+}
+
+/** If a pipe has a maximum length, erase the tail of the pipe. */
+void erase_pipe_tail(struct pipe *pipe, struct canvas *canvas) {
+    unsigned int *tail = location_buffer_tail(pipe->locations);
+    if(tail)
+        canvas_erase_tail(canvas, *tail, pipe);
 }
 
 /** Wrap a pipe at terminal boundaries.  If there are multi-column continuation
  * characters, wrap the pipe before it gets a chance to spit out incomplete
  * characters.
  */
-bool wrap_pipe(struct pipe *pipe, unsigned int width, unsigned int height){
+bool wrap_pipe(struct pipe *pipe, struct canvas *canvas){
     // Take multi-column chars into account
+    unsigned int width = canvas->width;
     width -= width % max(states[0][1], -states[2][0]);
 
     if(pipe->x < 0 || (unsigned int) pipe->x >= width
-            || pipe->y < 0 || (unsigned int) pipe->y >= height){
-        if(pipe->x < 0){ pipe->x += width; }
-        if(pipe->y < 0){ pipe->y += height; }
-        if((unsigned int) pipe->x >= width) {pipe->x -= width; }
-        if((unsigned int) pipe->y >= height) {pipe->y -= height; }
+            || pipe->y < 0 || (unsigned int) pipe->y >= canvas->height){
+        if(pipe->x < 0)
+            pipe->x += width;
+        if(pipe->y < 0)
+            pipe->y += canvas->height;
+        if((unsigned int) pipe->x >= canvas->width)
+            pipe->x -= width;
+        if((unsigned int) pipe->y >= canvas->height)
+            pipe->y -= canvas->height;
         return true;
     }
     return false;

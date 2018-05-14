@@ -47,8 +47,8 @@ static void err_provenance(const char *file, int line, const char *function) {
 }
 
 
-/** Store message in buffer. */
-void set_error_(const char *file, int line, const char *function,
+/** Store message in buffer. Returns the err_num for convenience. */
+cpipes_errno set_error_(const char *file, int line, const char *function,
         cpipes_errno err_num, ...) {
     assert(ERR_ICONV_ERROR <= err_num && err_num <= ERR_CURSES_ERR
             /* Error number is within the correct range */);
@@ -69,6 +69,8 @@ void set_error_(const char *file, int line, const char *function,
     // Always terminate with a nul, even if snprintf didn't allow anything to
     // actually be appended.
     ERR_BUF[ERR_BUF_SZ - 1] = '\0';
+
+    return err_num;
 }
 
 #ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
