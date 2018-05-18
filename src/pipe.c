@@ -344,6 +344,14 @@ cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
     return 0;
 }
 
+// Free pipe, including the location buffer (if set)
+void free_pipe(struct pipe *pipe) {
+    if(pipe->locations) {
+        location_buffer_free(pipe->locations);
+        free(pipe->locations);
+    }
+}
+
 /** Move a pipe by the amount given by the current state. If
  * `multicolumn_adjust` was called and detected that multicolumn characters are
  * in use, the `states` variable will have been updated to reflect the width of

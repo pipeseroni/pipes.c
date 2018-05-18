@@ -38,6 +38,7 @@ struct palette;
 
 cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
         int initial_state, unsigned int max_len);
+void free_pipe(struct pipe *pipe);
 void move_pipe(struct pipe *pipe, struct canvas *canvas);
 bool wrap_pipe(struct pipe *pipe, struct canvas *canvas);
 void erase_pipe_tail(struct pipe *pipe, struct canvas *canvas);
