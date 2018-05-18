@@ -322,7 +322,9 @@ void animate(int fps, anim_function renderer, struct canvas *canvas,
 
         // If we received a SIGWINCH, update width and height
         if(key == KEY_RESIZE) {
-            getmaxyx(stdscr, canvas->height, canvas->width);
+            int width, height;
+            getmaxyx(stdscr, height, width);
+            canvas_resize(canvas, width, height);
         }else if(key != ERR) {
             // Any actual keypresses should quit the program.
             break;
