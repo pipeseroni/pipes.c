@@ -76,6 +76,7 @@ static struct option opts[] = {
     {"backup-colors", no_argument, 0,   'b'},
     {0,         0,                 0,    0 }
 };
+const char *optstring = "p:f:al:m:r:i:C:c:h";
 
 
 //All pipes
@@ -277,7 +278,7 @@ void find_num_colors(int argc, char **argv) {
     opterr = 0;
     // First work out how many colors were specified on the command line
     int c;
-    while((c = getopt_long(argc, argv, "c:", opts, NULL)) != -1) {
+    while((c = getopt_long(argc, argv, optstring, opts, NULL)) != -1) {
         if(c == 'c')
             num_custom_colors++;
     }
@@ -303,7 +304,7 @@ void parse_options(int argc, char **argv){
     uint32_t color = 0;
 
     optind = 0;
-    while((c = getopt_long(argc, argv, "p:f:al:m:r:i:C:c:h", opts, NULL)) != -1){
+    while((c = getopt_long(argc, argv, optstring, opts, NULL)) != -1){
         switch(c){
             errno = 0;
             case 'p':
