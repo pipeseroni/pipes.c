@@ -57,6 +57,7 @@ const char *usage =
     "    -m, --max=N     Minimum length of pipe.           (Default: None  )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
+    "    -C, --chars=S   Custom list of pipe characters.   (Default: ━┃┓┛┗┏)\n"
     "    -c, --color=C   Add color C (in RRGGBB hexadecimal) to palette.\n"
     "    --backup-colors Backup colors and restore when exiting.\n"
     "    -h, --help      This help message.\n";
@@ -68,6 +69,8 @@ static struct option opts[] = {
     {"length",  required_argument, 0,   'l'},
     {"max",     required_argument, 0,   'm'},
     {"prob",    required_argument, 0,   'r'},
+    {"init",    required_argument, 0,   'i'},
+    {"chars",   required_argument, 0,   'C'},
     {"help",    no_argument,       0,   'h'},
     {"color",   required_argument, 0,   'c'},
     {"backup-colors", no_argument, 0,   'b'},
@@ -87,17 +90,23 @@ float prob = 0.1;
 unsigned int min_len = 2;
 unsigned int max_len = 0;
 
+// 4x4 matrix of transition characters, and 2 continuation characters.
+// These are arrays of char pointers pointing to elements of pipe_char_buf.
 char *trans[16];
 char *pipe_chars[2];
 
-// If/when we supply user-configurable characters, this will need to be changed
-// to point to the user's terminal encoding.
+// Characters encoded in the source code charset are UTF-8. This will be set
+// to the user's terminal encoding if a custom set of characters is supplied.
 const char *source_charset = "UTF-8";
 
+// Preset character sets, encoded in source encoding.
 const char *ASCII_CHARS = "-|++++";
 const char *UNICODE_CHARS = "━┃┓┛┗┏";
+
+// The chosen set of characters.
 const char *selected_chars = NULL;
 
+// Used to hold nul-separated pipe characters in the user's encoding.
 char pipe_char_buf[CHAR_BUF_SZ];
 
 // Colours set by parse_options by the "-c" flag
@@ -118,13 +127,19 @@ int init_chars(void) {
     if(strlen(selected_chars) >= CHAR_BUF_SZ)
         return -1;
 
+    size_t num_chars;
     char *term_charset = nl_langinfo(CODESET);
     char inbuf[CHAR_BUF_SZ];
     char utf8buf[CHAR_BUF_SZ];
     strncpy(inbuf, selected_chars, CHAR_BUF_SZ);
 
     X(locale_to_utf8(inbuf, utf8buf, source_charset, CHAR_BUF_SZ));
-    X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset));
+    X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset,
+                     &num_chars));
+    if(num_chars != 6) {
+        fprintf(stderr, "Expected 6 pipe characters but found %zu\n", num_chars);
+        exit(1);
+    }
     assign_matrices(pipe_char_buf, trans, pipe_chars);
     X(multicolumn_adjust(pipe_chars));
     return 0;
@@ -288,7 +303,7 @@ void parse_options(int argc, char **argv){
     uint32_t color = 0;
 
     optind = 0;
-    while((c = getopt_long(argc, argv, "p:f:al:m:r:i:c:h", opts, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "p:f:al:m:r:i:C:c:h", opts, NULL)) != -1){
         switch(c){
             errno = 0;
             case 'p':
@@ -333,6 +348,10 @@ void parse_options(int argc, char **argv){
                     die();
                 }
                 custom_colors[color_index++] = color;
+                break;
+            case 'C':
+                source_charset = nl_langinfo(CODESET);
+                selected_chars = optarg;
                 break;
             case 'h':
                 usage_msg(0);

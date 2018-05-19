@@ -170,12 +170,15 @@ cpipes_errno locale_to_utf8(char *locale_bytes, char *utf8_bytes,
  * to_charset:
  *      Name of the character set into which we are converting.
  *
+ * num_chars:
+ *      Optional pointer that will contain the number of encoded chars.
+ *
  * This function will return 0 on success or a negative number on error.
  */
 cpipes_errno utf8_to_locale(
         char *utf8_chars,
         char *out_chars, size_t buflen,
-        const char *to_charset){
+        const char *to_charset, size_t *num_chars){
 
     iconv_t cd = iconv_open(to_charset, "UTF-8");
     if(cd == (iconv_t) -1){
@@ -187,6 +190,9 @@ cpipes_errno utf8_to_locale(
         add_error_info("Iconv error: %s", strerror(errno_copy));
         return ERR_ICONV_ERROR;
     }
+
+    if(num_chars)
+        (*num_chars) = 0;
 
     char *utf8_char_start = utf8_chars;
     char *locale_char_start = out_chars;
@@ -213,6 +219,8 @@ cpipes_errno utf8_to_locale(
                 return ERR_ICONV_ERROR;
             }
             (*locale_char_start) = '\0';
+            if(num_chars)
+                (*num_chars)++;
             locale_char_start++;
             remaining_bytes--;
         }

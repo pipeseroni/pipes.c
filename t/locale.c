@@ -11,7 +11,7 @@
 /**
  * Check locale-encoding functions.
  */
-#define NUM_TESTS 30
+#define NUM_TESTS 34
 
 // These are the same in UTF8 and GB18030
 const char *UTF8_ASCII = "123";
@@ -31,6 +31,7 @@ char *continuation[2];
 int main(int argc, char **argv) {
     int r;
 
+    size_t num_converted;
     size_t bufsz = 20;
     char in[bufsz];
     char out[bufsz];
@@ -96,30 +97,34 @@ int main(int argc, char **argv) {
 
     // Convert UTF-8 to GB18030 with ASCII bytes
     strcpy(in, UTF8_ASCII);
-    r = utf8_to_locale(in, out, 6, "GB18030");
+    r = utf8_to_locale(in, out, 6, "GB18030", &num_converted);
     ok(r == 0,
         "ASCII UTF8 to GB18030 in 6 bytes: no error code.");
     ok(memcmp(out, GB18030_ASCII_SPLIT, 6) == 0,
         "ASCII UTF8 to GB18030 copied correctly.");
+    cmp_ok(num_converted, "==", 3, "Encoded all input chars.");
     clear_error();
 
-    r = utf8_to_locale(in, out, 5, "GB18030");
+    r = utf8_to_locale(in, out, 5, "GB18030", &num_converted);
     ok(r == ERR_BUFFER_TOO_SMALL,
         "ASCII UTF8 to GB18030 in 5 bytes: buffer too small.");
+    cmp_ok(num_converted, "==", 2, "Encoded some input chars.");
     clear_error();
 
     // Convert UTF-8 to GB18030 with box-drawing bytes
     strcpy(in, UTF8_BOX);
-    r = utf8_to_locale(in, out, 6, "GB18030");
+    r = utf8_to_locale(in, out, 6, "GB18030", &num_converted);
     ok(r == 0,
         "Box UTF8 to GB18030 in 6 bytes: no error code.");
     ok(memcmp(out, GB18030_BOX_SPLIT, 6) == 0,
         "Box UTF8 to GB18030 copied correctly.");
+    cmp_ok(num_converted, "==", 2, "Encoded all input chars.");
     clear_error();
 
-    r = utf8_to_locale(in, out, 5, "GB18030");
+    r = utf8_to_locale(in, out, 5, "GB18030", &num_converted);
     ok(r == ERR_ICONV_ERROR,
         "Box UTF8 to GB18030 in 5 bytes: buffer too small.");
+    cmp_ok(num_converted, "==", 1, "Encoded some input chars.");
     clear_error();
 
     // Assign transition and continuation matrices
