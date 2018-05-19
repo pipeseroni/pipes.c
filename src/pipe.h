@@ -54,7 +54,7 @@ cpipes_errno locale_to_utf8(char *locale_bytes, char *utf8_bytes,
 cpipes_errno utf8_to_locale(
         char *utf8_chars,
         char *out_chars, size_t buflen,
-        const char *to_charset);
+        const char *to_charset, size_t *num_chars);
 void assign_matrices(char *pipe_chars,
         char **transition, char **continuation);
 cpipes_errno multicolumn_adjust(char **continuation);
