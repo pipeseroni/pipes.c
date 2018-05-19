@@ -59,11 +59,18 @@ void canvas_free(struct canvas *canvas) {
  */
 void canvas_erase_tail(struct canvas *c,
         unsigned int tail, struct pipe *p) {
+    unsigned int y = tail / c->width;
+    unsigned int x = tail % c->width;
+
+    // If the canvas has shrunk, the tail of the pipe can fall outside of the
+    // current bounds. The cell should already have been freed and will be
+    // invisible, so we can just skip it.
+    if(x >= c->width || y >= c->height)
+        return;
+
     struct pipe_cell_list *cells = &c->cells[tail];
     struct pipe_cell *head = cells->head;
 
-    unsigned int y = tail / c->width;
-    unsigned int x = tail % c->width;
     pipe_cell_list_remove(cells, p);
     if(!cells->head) {
         mvaddstr(y, x, " ");

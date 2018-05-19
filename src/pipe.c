@@ -382,13 +382,13 @@ bool wrap_pipe(struct pipe *pipe, struct canvas *canvas){
     if(pipe->x < 0 || (unsigned int) pipe->x >= width
             || pipe->y < 0 || (unsigned int) pipe->y >= canvas->height){
         if(pipe->x < 0)
-            pipe->x += width;
+            pipe->x = width - 1;
         if(pipe->y < 0)
-            pipe->y += canvas->height;
+            pipe->y = canvas->height - 1;
         if((unsigned int) pipe->x >= canvas->width)
-            pipe->x -= width;
+            pipe->x = 0;
         if((unsigned int) pipe->y >= canvas->height)
-            pipe->y -= canvas->height;
+            pipe->y = 0;
         return true;
     }
     return false;
