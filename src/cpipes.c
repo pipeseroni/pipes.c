@@ -186,7 +186,11 @@ cleanup:
 
     canvas_free(&canvas);
     free(custom_colors);
+
+    for(size_t i = 0; i < num_pipes; i++)
+        free_pipe(&pipes[i]);
     free(pipes);
+
     palette_destroy(&canvas.palette);
     return 0;
 }
