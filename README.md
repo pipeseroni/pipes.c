@@ -31,6 +31,12 @@ Autoconf Archive manually and tell `autoreconf` to use the local copy:
 Note that at least version 2.64 of autoconf and version 2017.03.21 of
 autoconf-archive are required.
 
+If you wish to run the unit tests, you will need to install [libtap][libtap].
+This is configured as a submodule, so can use `git submodule` to get a copy:
+
+    git submodule init
+    git submodule update
+
 ## Usage
 
 To get help, run `cpipes --help`. In my opinion, the following options are
@@ -45,3 +51,4 @@ Please report any bugs using the Github issue tracker.
 
 [autoconf]: https://www.gnu.org/software/autoconf/autoconf.html
 [autoconf-archive]: https://www.gnu.org/software/autoconf-archive/
+[libtap]: https://github.com/zorgnax/libtap
