@@ -54,7 +54,7 @@ const char *usage =
     "    -f, --fps=F     Frames per second.                (Default: 60.0  )\n"
     "    -a, --ascii     ASCII mode.                       (Default: no    )\n"
     "    -l, --length=N  Minimum length of pipe.           (Default: 2     )\n"
-    "    -m, --max=N     Minimum length of pipe.           (Default: None  )\n"
+    "    -m, --max=N     Maximum length of pipe.           (Default: None  )\n"
     "    -r, --prob=N    Probability of changing direction.(Default: 0.1   )\n"
     "    -i, --init=N    Initial state (0,1,2,3 => R,D,L,U)(Default: random)\n"
     "    -C, --chars=S   Custom list of pipe characters.   (Default: ━┃┓┛┗┏)\n"
