@@ -132,7 +132,7 @@ int init_chars(void) {
     char *term_charset = nl_langinfo(CODESET);
     char inbuf[CHAR_BUF_SZ];
     char utf8buf[CHAR_BUF_SZ];
-    strncpy(inbuf, selected_chars, CHAR_BUF_SZ);
+    strcpy(inbuf, selected_chars);
 
     X(locale_to_utf8(inbuf, utf8buf, source_charset, CHAR_BUF_SZ));
     X(utf8_to_locale(utf8buf, pipe_char_buf, CHAR_BUF_SZ, term_charset,
