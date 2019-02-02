@@ -60,8 +60,10 @@ LIBS=$libs
 AX_COMPILER_FLAGS()
 
 # Remove warning for declaration-after-statement: this does not apply to C99
+# -Wsuggest-attribute=format is also annoying.
 WARN_CFLAGS=$(AS_ECHO(["$WARN_CFLAGS"]) | dnl
-              $SED 's/-W\(error=\)\?declaration-after-statement *//g')
+              $SED 's/-W\(error=\)\?declaration-after-statement *//g' | dnl
+              %SED 's/-W\(error=\)\?suggest-attribute=format *//g')
 AC_SUBST([WARN_CFLAGS])
 
 # OSX requires linking against libiconv
