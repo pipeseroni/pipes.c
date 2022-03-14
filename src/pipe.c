@@ -322,7 +322,7 @@ cpipes_errno multicolumn_adjust(char **continuation) {
  * function makes sure to only assign initial positions at full-character
  * boundaries.
  */
-cpipes_errno init_pipe(struct pipe *pipe, struct canvas *canvas,
+cpipes_errno init_pipe(struct pipe *pipe, UNUSED struct canvas *canvas,
         int initial_state, unsigned int max_len) {
     // Multicolumn chars shouldn't be placed off the end of the screen
     size_t colwidth = max(states[0][0], -states[2][0]);
@@ -365,7 +365,7 @@ void free_pipe(struct pipe *pipe) {
  * in use, the `states` variable will have been updated to reflect the width of
  * the largest character in use.
  */
-void move_pipe(struct pipe *pipe, struct canvas *canvas){
+void move_pipe(struct pipe *pipe, UNUSED struct canvas *canvas){
     pipe->x += states[pipe->state][0];
     pipe->y += states[pipe->state][1];
     pipe->length++;

@@ -211,7 +211,7 @@ cleanup:
     return 0;
 }
 
-void render(struct canvas *c, void *data){
+void render(struct canvas *c, UNUSED void *data){
     for(size_t i=0; i<num_pipes && !interrupted; i++){
         move_pipe(&pipes[i], c);
 
@@ -241,7 +241,7 @@ void render(struct canvas *c, void *data){
     refresh();
 }
 
-void interrupt_signal(int param){
+void interrupt_signal(UNUSED int param){
     interrupted = 1;
 }
 

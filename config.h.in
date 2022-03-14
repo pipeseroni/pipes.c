@@ -1,0 +1,108 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* have alloc_pair(0, 0) */
+#undef HAVE_ALLOC_PAIR
+
+/* Define to 1 if a SysV or X/Open compatible Curses library is present */
+#undef HAVE_CURSES
+
+/* Define to 1 if library supports color (enhanced functions) */
+#undef HAVE_CURSES_COLOR
+
+/* Define to 1 if library supports X/Open Enhanced functions */
+#undef HAVE_CURSES_ENHANCED
+
+/* Define to 1 if <curses.h> is present */
+#undef HAVE_CURSES_H
+
+/* Define to 1 if library supports certain obsolete features */
+#undef HAVE_CURSES_OBSOLETE
+
+/* have init_extended_color(0, 0, 0, 0) */
+#undef HAVE_EXTENDED_COLOR
+
+/* Define to 1 if the system has the `format' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_FORMAT
+
+/* Define to 1 if the system has the `unused' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_UNUSED
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if the Ncurses library is present */
+#undef HAVE_NCURSES
+
+/* Define to 1 if the NcursesW library is present */
+#undef HAVE_NCURSESW
+
+/* Define to 1 if <ncursesw/curses.h> is present */
+#undef HAVE_NCURSESW_CURSES_H
+
+/* Define to 1 if <ncursesw.h> is present */
+#undef HAVE_NCURSESW_H
+
+/* Define to 1 if <ncurses/curses.h> is present */
+#undef HAVE_NCURSES_CURSES_H
+
+/* Define to 1 if <ncurses.h> is present */
+#undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <stdnoreturn.h> header file. */
+#undef HAVE_STDNORETURN_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Use POSIX 200809L features */
+#undef _POSIX_C_SOURCE

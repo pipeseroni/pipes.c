@@ -1,10 +1,10 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.64])
+AC_PREREQ([2.71])
 
 # Package version from `git describe`
 AC_INIT([pipes.c],
-        m4_esyscmd_s([git describe --always --tags --dirty | sed 's/^v//' ]),
+        m4_esyscmd_s(git describe --always --tags --dirty | sed 's/^v//' ),
         [stefans.mezulis@gmail.com])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/cpipes.c])
@@ -13,23 +13,18 @@ AM_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_SED
 AC_LANG([C])
-AC_PROG_CC_C99
+AC_PROG_CC
 
-dnl Obsolete macro, but required by old versions of automake
-AM_PROG_CC_C_O
-
-# Use POSIX 200809L functions.
-# _POSIX_C_SOURCE >= 200809L should be equivalent to _XOPEN_SOURCE >= 700,
-# but at least on RHEL7 it is not.
 AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Use POSIX 200809L features])
-AC_DEFINE([_XOPEN_SOURCE], [700], [Use POSIX 200809L features])
 
 # Non-release versions have a dash (e.g. 0.0.1-1-g1abcde)
 AX_IS_RELEASE([dash-version])
 
 # Require curses
 AX_WITH_CURSES
-
+if test "x$ax_cv_curses" != "xyes"; then
+    AC_MSG_ERROR([A curses library is required.])
+fi
 
 libs=$LIBS
 LIBS=$CURSES_LIBS
@@ -56,16 +51,6 @@ have_fn([#include <curses.h>],
 
 LIBS=$libs
 
-# Enable as many compiler warnings as possible
-AX_COMPILER_FLAGS()
-
-# Remove warning for declaration-after-statement: this does not apply to C99
-# -Wsuggest-attribute=format is also annoying.
-WARN_CFLAGS=$(AS_ECHO(["$WARN_CFLAGS"]) | dnl
-              $SED 's/-W\(error=\)\?declaration-after-statement *//g' | dnl
-              %SED 's/-W\(error=\)\?suggest-attribute=format *//g')
-AC_SUBST([WARN_CFLAGS])
-
 # OSX requires linking against libiconv
 AC_SEARCH_LIBS([iconv], [iconv], [],
                [AC_MSG_ERROR(["iconv is required for locale conversion"])])
@@ -77,8 +62,10 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [],
 AC_SEARCH_LIBS([fmod], [m], [],
                [AC_MSG_ERROR(["fmod is required"])])
 
-# Check for format attribute
+# Check for attribute (just used to suppress warnings)
 AX_GCC_FUNC_ATTRIBUTE([format])
+AX_GCC_FUNC_ATTRIBUTE([unused])
+
 
 # Use noreturn attribute if available
 AC_CHECK_HEADERS_ONCE([stdnoreturn.h])
