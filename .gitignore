@@ -2,7 +2,6 @@ pipes-c
 *.swp
 *.o
 Makefile
-aclocal.m4
 config.h
 config.log
 config.status
