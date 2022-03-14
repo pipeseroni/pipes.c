@@ -3,13 +3,10 @@ pipes-c
 *.o
 Makefile
 aclocal.m4
-compile
 config.h
 config.log
 config.status
 depcomp
-install-sh
-missing
 *.tar.gz
 .deps
 .dirstamp
