@@ -8,6 +8,13 @@ The code should compile with a C99-compliant compiler and a POSIX-compliant-ish
 system (that is, most systems). A `configure` script is included in the source
 tree and can be used in the usual way.
 
+First, initalise git submodules to retrieve the testing harness:
+
+    git submodule init
+    git submodule update
+
+Then build and install.
+
     ./configure && make && make install
 
 Alternative, the meson build system can be used.
